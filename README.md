@@ -2,20 +2,58 @@
 
 A personal Claude skills marketplace. Currently ships one skill:
 
-**`ac-code-skill`** — a coordinator skill that dispatches a fleet of seven
-role-shaped subagents (**Frontend**, **Backend**, **Cyber Security**,
-**Tester**, **DevOps**, **Docs**, and an **AI Agent Engineer** for repos with
-AI/LLM features) in parallel over a codebase, coordinates them through one
-shared `.ac-code-skill/` memory plus living docs, and merges their findings into
-a single prioritized report. Every agent reads the full current memory and docs each run, checks for
-outdated and dead/unused dependencies and dead code/files/folders, and improves
-its own playbook as it works. Docs are generated automatically after review and
-updated automatically after approved fixes; fixes are approval-gated; deploys
-run automatically with rollback behind safety gates. `run ac-code-skill` runs
-the whole pipeline in one prompt, and on an empty repo the skill interviews you
-from every agent's perspective to bootstrap a new project from scratch. Zero
-external dependencies (browser automation and security scanning use MCP
-connectors or tools you already have, with graceful fallbacks).
+## `ac-code-skill`
+
+A coordinator skill that dispatches a fleet of **seven principal/staff-level
+role-agents** in parallel over a codebase, coordinates them through one shared
+`.ac-code-skill/` memory plus living docs, and merges their findings into a
+single prioritized report. Each agent reasons like a principal engineer for its
+discipline — it catches the class of bug and scaling cliff a mid-level review
+misses, and proposes fixes with the trade-off (cost/risk/latency) spelled out —
+while staying strictly in scope and verifying every claim against real command
+output.
+
+### The seven agents
+
+| Agent | Role | Owns |
+|---|---|---|
+| **Frontend** | UI Architect | rendering paradigm fit, Core Web Vitals & perf budgets, WCAG 2.2/ARIA, design tokens, TS-at-scale, dead FE code/deps |
+| **Backend** | Distributed Systems Architect | concurrency/back-pressure, distributed correctness (idempotency, CAP, consensus/CRDT), data architecture & query plans, API/event governance, migration safety, dead BE code/deps |
+| **Cyber Security** | AppSec Architect (builder) | logic-flaw analysis beyond scanners, crypto engineering, CI security gates, identity, supply chain (SBOM/SLSA), secrets, PII, outdated/advisory deps |
+| **Tester** | Quality Architect (SDET) | all testing (unit/integration/e2e, both layers), strategy, flakiness, contract/perf/chaos, coverage, quality dashboards, test authoring |
+| **DevOps** | Platform Architect / SRE | self-service IDP, zero-downtime delivery (GitOps/canary), K8s/IaC, observability-as-code, deploy + auto-rollback, server patches, dep upgrades |
+| **Docs** | Documentation Architect | PRD/BRD/FDD/TDD/ADR — auto-generated after review, auto-updated after fixes |
+| **AI Agent Engineer** | Agentic Systems Architect | AI/LLM features: prompts & injection defense, agent/RAG architecture, evals, model choice, cost, guardrails (dispatched only when the repo has AI) |
+
+### How it works
+
+1. **Memory & docs** — load or bootstrap the shared `.ac-code-skill/` state.
+2. **Detect** the stack, commands, dependencies, and AI signals — or, on an empty
+   repo, switch to **greenfield mode** and interview you from every agent's
+   perspective before scaffolding.
+3. **Select & confirm** which agents the repo and request actually need.
+4. **Review** — the selected agents run in parallel, read-only, and their
+   findings merge into one prioritized report.
+5. **Docs** — documentation is generated automatically, then the report is
+   delivered.
+6. **Fix** — approved fixes only, applied in batches; docs auto-update afterward.
+7. **Deploy** — automatic, with health checks and rollback behind safety gates.
+
+### What makes it different
+
+- **One-prompt full run** — `run ac-code-skill` executes the whole pipeline end
+  to end, stopping only at the approval gates for fixes and deploys.
+- **Living docs** — generated after review and refreshed again after fixes, so
+  the documentation always matches the code.
+- **Shared memory + self-improvement** — every agent reads the full memory and
+  docs each run and feeds an *Agent learnings* store, so the fleet compounds
+  skill over time, not just knowledge.
+- **Dependency & dead-code hygiene** — outdated/EOL/advisory packages, unused
+  dependencies, and dead code/files/folders are swept every run.
+- **Greenfield bootstrap** — an empty repo triggers a per-role intake interview
+  that turns your answers into docs and a scaffold.
+- **Zero external dependencies** — browser automation and security scanning use
+  MCP connectors or tools you already have, with graceful fallbacks.
 
 ---
 
@@ -63,12 +101,12 @@ zip -r ../ac-code-skill.skill ac-code-skill
 
 ```
 skills/ac-code-skill/
-├── SKILL.md                       # the coordinator: phases, roster, gates
+├── SKILL.md                       # the coordinator: modes, phases, roster, gates
 ├── references/
 │   ├── shared-rules.md            # the 5 rules every agent follows
 │   ├── memory.md                  # .ac-code-skill/ shared-memory + docs protocol
-│   ├── stack-detection.md         # language-agnostic stack/command detection
-│   ├── agent-roles.md             # every agent's brief
+│   ├── stack-detection.md         # language-agnostic stack/command/AI detection
+│   ├── agent-roles.md             # every agent's principal-level brief
 │   ├── testing-harness.md         # zero-dep testing playbook (MCP browser, evidence)
 │   ├── report-format.md           # agent output + merged report shape
 │   └── deploy.md                  # auto-deploy runbook + rollback + gates
