@@ -22,7 +22,7 @@ output.
 | **Cyber Security** | AppSec Architect (builder) | logic-flaw analysis beyond scanners, crypto engineering, CI security gates, identity, supply chain (SBOM/SLSA), secrets, PII, outdated/advisory deps |
 | **Tester** | Quality Architect (SDET) | all testing (unit/integration/e2e, both layers), strategy, flakiness, contract/perf/chaos, coverage, quality dashboards, test authoring |
 | **DevOps** | Platform Architect / SRE | self-service IDP, zero-downtime delivery (GitOps/canary), K8s/IaC, observability-as-code, deploy + auto-rollback, server patches, dep upgrades |
-| **Docs** | Documentation Architect | PRD/BRD/FDD/TDD/ADR — auto-generated after review, auto-updated after fixes |
+| **Docs** | Documentation Architect | PRD/BRD/FDD/TDD/ADR as **Word `.docx`** — auto-generated after review, auto-updated after fixes |
 | **AI Agent Engineer** | Agentic Systems Architect | AI/LLM features: prompts & injection defense, agent/RAG architecture, evals, model choice, cost, guardrails (dispatched only when the repo has AI) |
 
 ### How it works
@@ -43,8 +43,9 @@ output.
 
 - **One-prompt full run** — `run ac-code-skill` executes the whole pipeline end
   to end, stopping only at the approval gates for fixes and deploys.
-- **Living docs** — generated after review and refreshed again after fixes, so
-  the documentation always matches the code.
+- **Living docs as Word files** — PRD/BRD/FDD/TDD/ADR generated as `.docx` after
+  review and refreshed again after fixes, so the documentation always matches the
+  code.
 - **Shared memory + self-improvement** — every agent reads the full memory and
   docs each run and feeds an *Agent learnings* store, so the fleet compounds
   skill over time, not just knowledge.
@@ -112,12 +113,13 @@ skills/ac-code-skill/
 │   └── deploy.md                  # auto-deploy runbook + rollback + gates
 └── scripts/
     ├── with_server.py             # stdlib server-lifecycle helper (black box)
-    └── run_scanners.py            # stdlib security-scanner runner (black box)
+    ├── run_scanners.py            # stdlib security-scanner runner (black box)
+    └── md_to_docx.py              # stdlib Markdown→Word (.docx) renderer (black box)
 ```
 
 Runtime output in a target repo lives under `.ac-code-skill/` (gitignored):
-`memory.md`, docs auto-generated into `docs/` (refreshed after review and again
-after fixes), and per-run logs/reports in `log/<run-id>/`.
+`memory.md`, docs auto-generated into `docs/` as **Word `.docx`** files (refreshed
+after review and again after fixes), and per-run logs/reports in `log/<run-id>/`.
 
 ## License
 

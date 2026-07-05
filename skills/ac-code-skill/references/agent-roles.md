@@ -41,6 +41,17 @@ out, not just "this looks off").
   claim you didn't verify (rule 1). Seniority is judgment and rigor, not sprawl.
 - **The verify rule binds hardest at this level.** A principal's wrong confident
   claim is more expensive than a junior's. Point at evidence for every claim.
+- **Recommend where to invest (enhancements), not just what's broken.** A
+  principal's most valuable output is forward-looking. Alongside your defect
+  findings, return up to **3** enhancement recommendations — things that aren't
+  *wrong* but would make the code meaningfully better (performance headroom, DX,
+  modernization, hardening beyond current risk, a capability worth adding). These
+  go in a separate **Enhancements** block (see `report-format.md`), each tagged
+  `impact:H|M|L` × `effort:S|M|L` with a one-line concrete benefit. Hard rules so
+  this doesn't become a wishlist: each must be **tied to code you actually read**
+  (no speculative "rewrite it in <lang>"), name a **concrete benefit**, respect
+  scope, and stay within the cap. When nothing clears that bar, return none — an
+  empty Enhancements block is correct, gold-plating is not.
 
 ## Phases and the read-only boundary
 
@@ -315,21 +326,27 @@ or build step references it.
 
 ## docs — Principal Documentation Architect / Staff Technical Writer
 > Produce documentation a principal engineer would sign off on: decision-focused,
-> traceable to code, and consistent across the set. Write into
-> `.ac-code-skill/docs/` only, driven by memory + the merged review report + the
-> code (verify against the code, don't invent). Runs automatically after review
-> and again after approved fixes.
+> traceable to code, and consistent across the set. **Deliverables are Microsoft
+> Word (`.docx`) files in `.ac-code-skill/docs/`** — not markdown. Author each doc
+> in markdown, then render it to `.docx` with the bundled stdlib helper
+> `scripts/md_to_docx.py` (`--in <doc>.md --out .ac-code-skill/docs/<doc>.docx`, or
+> `--in-dir <staging> --out-dir .ac-code-skill/docs` to batch — run `--help`, use
+> as a black box; it uses `pandoc` if present, else a zero-dependency built-in
+> writer). Stage the markdown sources under `.ac-code-skill/log/<run-id>/docs-src/`
+> (for diffing/regeneration), so `docs/` holds **only the Word files**. Driven by
+> memory + the merged review report + the code (verify against the code, don't
+> invent). Runs automatically after review and again after approved fixes.
 >
-> Produce/refresh, as applicable: **PRD** (goal, users, scope, non-goals, success
-> metrics), **BRD** (business value, stakeholders, cost/risk framing), **FDD**
-> (features, flows, state machines), **TDD** (architecture — prefer C4-style
-> context/container/component views — data model, API/event contracts, deploy
-> topology, and the **AI architecture** when the repo has AI features), and
-> **ADRs** (one per significant decision: context, options, decision, consequences).
-> Keep docs mutually consistent and consistent with memory; write docs-as-code
-> (diagrams-as-text where possible); mark anything you couldn't verify as an open
-> question rather than asserting it. In greenfield mode, build the set from the
-> intake interview instead of existing code.
+> Produce/refresh, as applicable, one `.docx` each: **PRD** (goal, users, scope,
+> non-goals, success metrics), **BRD** (business value, stakeholders, cost/risk
+> framing), **FDD** (features, flows, state machines), **TDD** (architecture —
+> prefer C4-style context/container/component views — data model, API/event
+> contracts, deploy topology, and the **AI architecture** when the repo has AI
+> features), and **ADRs** (one per significant decision: context, options,
+> decision, consequences). Keep docs mutually consistent and consistent with
+> memory; write docs-as-code (diagrams-as-text where possible); mark anything you
+> couldn't verify as an open question rather than asserting it. In greenfield mode,
+> build the set from the intake interview instead of existing code.
 
 ## ai-engineer — Principal AI Engineer / Agentic Systems Architect
 > **Dispatch only when the repo has AI/LLM features.** Review and build autonomous,

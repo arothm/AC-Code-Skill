@@ -122,7 +122,7 @@ in `references/agent-roles.md`):
 | `security` | Cyber security: dep audit + outdated/EOL/advisory, SAST, secrets, authz, unsafe config, PII | review (read-only) |
 | `tester` | ALL testing (unit/integration/e2e, both layers) + build + type-check; authors tests on approval | review + fix |
 | `devops` | Deploy + rollback, server update/patch checks, CI/CD, applying dep upgrades | deploy (state-changing) |
-| `docs` | Create/update docs (PRD/BRD/FDD/TDD/ADR); auto after review, updated after fixes | docs (writes files) |
+| `docs` | Create/update docs as Word `.docx` (PRD/BRD/FDD/TDD/ADR); auto after review, updated after fixes | docs (writes files) |
 | `ai-engineer` | AI/LLM features in the product: prompts, agents/RAG, model choice, evals, cost, guardrails | review + fix (only when repo has AI) |
 
 **Select, don't launch everything.** Match agents to the repo and the request —
@@ -171,17 +171,27 @@ When they return, **merge — don't staple** (format in
 findings by severity (not by agent), deduplicate shared root causes, keep
 `file:line` + a concrete fix on each. Save the merged report to
 `.ac-code-skill/log/<run-id>/report.md`. Consolidate the agents' Memory deltas
-into `memory.md` and file their *Improvements* under *Agent learnings*. **Do not
-hand the report to the user yet — generate docs first (Step 4).**
+into `memory.md` and file their *Improvements* under *Agent learnings*.
+
+Each agent also returns up to **3 forward-looking enhancements** (see the shared
+caliber rules in `references/agent-roles.md`) — improvements that aren't defects.
+On a **full run / cycle**, compile these into the report's *Recommendations &
+enhancements* section (ranked by impact ÷ effort, deduped against the memory
+*Enhancement backlog*, kept out of the defect counts) and update the backlog. On
+a **quick diff-check**, tell agents to skip enhancements and omit the section —
+there the user wants defects only, not a roadmap. **Do not hand the report to the
+user yet — generate docs first (Step 4).**
 
 ### Step 4 — Docs (automatic, then deliver the report)
 
 As soon as the review is merged, dispatch the `docs` agent to generate or refresh
 the project's docs into `.ac-code-skill/docs/` — PRD, BRD, FDD, TDD, and ADRs —
-built from memory + the merged report + the code (verified, not invented). Then
+built from memory + the merged report + the code (verified, not invented). Docs
+are delivered as **Microsoft Word (`.docx`)** files, rendered via the bundled
+`scripts/md_to_docx.py` helper (zero-dependency; uses `pandoc` if present). Then
 present the report summary to the user inline and point them to both
-`.ac-code-skill/log/<run-id>/report.md` and the refreshed docs. This is the
-default flow; only skip it if the user explicitly says they don't want docs.
+`.ac-code-skill/log/<run-id>/report.md` and the refreshed `.docx` docs. This is
+the default flow; only skip it if the user explicitly says they don't want docs.
 
 ### Step 5 — Fix phase (only after approval), then update docs
 

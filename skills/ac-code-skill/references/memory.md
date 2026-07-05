@@ -15,10 +15,11 @@ run if it isn't there).
 ```
 .ac-code-skill/
 ├── memory.md            # the consolidated, always-current project knowledge base
-├── docs/                # generated formal docs (PRD/BRD/FDD/TDD/ADR) — regenerated each run
+├── docs/                # generated formal docs as Word .docx (PRD/BRD/FDD/TDD/ADR) — regenerated each run
 └── log/
     └── <run-id>/
         ├── <agent>.md   # each agent's raw report for this run
+        ├── docs-src/    # markdown sources the docs agent rendered to .docx
         └── report.md    # the merged report for this run
 ```
 
@@ -150,6 +151,19 @@ _Last updated: <date> by coordinator (run <run-id>)_
 - tester: <...>
 - (one bullet per learning, owned by the agent that found it)
 
+## Enhancement backlog (forward-looking recommendations — carried across runs)
+- [proposed] [impact:H effort:S] <area> — <enhancement>. Why: <benefit>. (from: <agent>, run <id>)
+- [accepted] <...> — user wants this; implement when in scope.
+- [done] <...> — shipped run <id>; keep so it isn't re-proposed.
+- [declined] <...> — user passed; do NOT re-suggest.
+
 ## Open questions / unresolved
 - Anything the fleet couldn't verify and a human should confirm.
 ```
+
+**Enhancement backlog protocol.** Enhancements are advisory recommendations, not
+defects — they live here (not in the findings list) so they persist across runs.
+Each run: add new ones as `[proposed]`, and before proposing, check the backlog —
+never re-suggest a `[done]` or `[declined]` item. Promote to `[accepted]` when the
+user says yes, `[done]` when shipped, `[declined]` when they pass. This is what
+stops the fleet from re-pitching the same roadmap every run.
