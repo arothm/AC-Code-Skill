@@ -172,6 +172,29 @@ Runtime output lands in `.ac-code-skill/` in the target repo (git-ignored): `mem
 `docs/*.docx`, `design-system/MASTER.md` + `pages/`, and `log/<run-id>/` holding each
 agent's raw report, captured evidence, and the merged report.
 
+## Updating
+
+New commits to this repo are picked up per-commit — the plugin entry carries no
+pinned `version`, so Claude Code falls back to the git SHA and treats every push as a
+new version.
+
+```
+/plugin marketplace update ccskill        # refresh the catalog from GitHub
+/plugin update ac-code-skill@ccskill      # update the installed plugin
+/reload-plugins                           # apply without restarting
+```
+
+Or from the CLI: `claude plugin update ac-code-skill@ccskill`, and `claude plugin list`
+to confirm what's installed.
+
+**Auto-update is off by default for third-party marketplaces** (including this one).
+Turn it on via `/plugin` → **Marketplaces** → select `ccskill` → **Enable auto-update**.
+Note that a running session keeps the versions it launched with: `SKILL.md` edits apply
+immediately, but other components need `/reload-plugins` or a restart.
+
+> **Developing the skill?** Skip the marketplace round-trip — copy or symlink
+> `skills/ac-code-skill` into `~/.claude/skills/` and your edits are live immediately.
+
 ## Install (other targets)
 
 **Skills folder**
