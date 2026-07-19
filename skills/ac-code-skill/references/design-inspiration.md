@@ -46,6 +46,19 @@ headline, generous whitespace around the value proposition, a near-neutral palet
 and a clean footer information architecture. Use it to calibrate *how little* a
 premium page needs. Proprietary brand site — **inspiration only, never clone**.
 
+### 2a. Vetted component libraries — `data/component-libraries.csv`
+Run `python scripts/standards.py --libraries`. Covers **shadcn/ui** (the base
+layer; an official MCP exists — prefer it when connected), **Magic UI** and
+**Aceternity UI** (animated marketing blocks), **React Bits**, **React Icons**,
+and **Google Fonts**. Each row records delivery model, licence, best-for, and
+caveats. Three rules bind their use: these are **copy-paste — the code becomes
+yours to maintain**; **verify the licence of the exact component** before it
+enters the repo (Aceternity in particular has mixed free/paid tiers, and each
+React Icons set carries its own licence); and **restyle to the project's tokens**
+so the result doesn't look stock. Effect-heavy blocks still have to clear the
+performance budget and `prefers-reduced-motion` — measure LCP/INP after adding
+one.
+
 ### 2. Watermelon UI (`ui.watermelon.sh`) — component & block implementation
 An **open-source, copy-paste component registry**: 260+ React components,
 dashboards, and blocks built on **React 19 + Tailwind v4 + Radix UI + Framer

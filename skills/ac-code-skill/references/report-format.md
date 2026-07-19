@@ -75,6 +75,14 @@ Warnings, labelled "single-agent, unconfirmed"._
 - backend tests: <pass/fail + summary>
 - linters/type-checkers: <summary>
 
+## Standards compliance
+_From `data/standards.csv`, checked on every run that touches their surface.
+List each standard as met / violated / not-applicable — a standard silently
+skipped is indistinguishable from one that passed._
+| Standard | Owner | Severity | Status | Evidence |
+|---|---|---|---|---|
+| <id> | <agent> | <blocking\|warning\|nit> | met / VIOLATED / n/a | <how it was verified> |
+
 ## Dependency & dead-code health
 - Outdated / EOL / advisory deps: <summary + which agent found them>
 - Confirmed-unused deps / dead code / dead files / dead folders: <summary>

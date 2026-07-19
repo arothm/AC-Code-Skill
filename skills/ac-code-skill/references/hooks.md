@@ -61,6 +61,25 @@ Set `SKILL` to wherever the skill lives (e.g. `~/.claude/skills/ac-code-skill`).
 }
 ```
 
+### Optional fourth: don't lose out-of-band work
+
+A skill stops existing when the turn ends, so fixes, deploys and incidents that
+happen *after* a run never reach memory. This nudges you to capture them:
+
+```jsonc
+"Stop": [
+  {
+    "hooks": [
+      {
+        "type": "command",
+        "command": "test -d .ac-code-skill && echo 'If anything changed outside a run (fix, deploy, incident, decision), capture it: ac-code-skill record \"<what happened>\"' || true",
+        "timeout": 5
+      }
+    ]
+  }
+]
+```
+
 ## What each one buys you
 
 | Hook | Effect | Why it's worth it |

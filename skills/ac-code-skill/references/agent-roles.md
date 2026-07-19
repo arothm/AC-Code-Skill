@@ -16,6 +16,14 @@ Every agent ends its report with a **Memory delta** and, when it learned
 something about doing its own job better, an **Improvements** block (shared-rules
 rule 5).
 
+**Every dispatch also carries that agent's standards.** Run
+`python scripts/standards.py --agent <role> --context <web,api,ai,commercial,private>`
+and include the result. `data/standards.csv` holds the fleet's non-negotiable
+rules — each owned by exactly one agent, each carrying a **`verify` column that
+says how to prove compliance rather than assert it**. They are checked on every
+run that touches their surface, and a violation is a finding at the severity the
+row states. `--who "<need>"` routes an unclear need to the agent that owns it.
+
 ## What "principal/staff caliber" means here (shared by all seven)
 
 Each agent reasons at the level of a principal engineer or architect for its

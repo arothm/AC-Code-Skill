@@ -57,6 +57,11 @@ spelled out — while staying strictly in scope.
   applied before anything is persisted. `file:line` and public URLs are PASS-classed so
   findings stay reproducible; internal IPs are hashed so they stay correlatable without
   publishing your topology.
+- **27 enforced standards** (`standards.csv`) — skeleton loaders over spinners, labels on
+  every input, no N+1, rate limiting, per-user AI token caps, HSTS/HTTP-3, semantic HTML,
+  privacy policy on commercial work, secrets only in a gitignored `.env`, and more. Each is
+  owned by exactly one agent and carries a **`verify` column stating how to prove it** —
+  a rule you cannot check is a wish.
 - **Living docs as Word files**, regenerated after fixes so they never drift from the code.
 - **Self-improvement.** Agents feed an *Agent learnings* store; each run's refinements are
   inherited by that role on the next run.
@@ -107,6 +112,12 @@ python scripts/design_system.py --validate --check-fonts    # + probe providers 
 # Retrieve the relevant slice of memory/docs instead of loading everything
 python scripts/recall.py "budget race condition" --root .ac-code-skill --role backend
 
+# Query the non-negotiable standards, or route a need to its owning agent
+python scripts/standards.py --agent frontend --context web,commercial --checklist
+python scripts/standards.py --who "rate limiting on a public endpoint"
+python scripts/standards.py --libraries          # vetted component libraries
+python scripts/standards.py --validate
+
 # Enforce the PII policy before anything is persisted
 python scripts/redact.py --in report.md --strict
 python scripts/redact.py --explain                          # the policy table
@@ -137,10 +148,12 @@ skills/ac-code-skill/
 ├── data/                       # self-validating datasets
 │   ├── styles.csv · palettes.csv · font-pairings.csv
 │   ├── product-rules.csv · motion-libraries.csv
+│   ├── standards.csv · component-libraries.csv
 │   └── pii-policy.csv
 └── scripts/                    # stdlib-only helpers
     ├── design_system.py · recall.py · redact.py
-    └── md_to_docx.py · with_server.py · run_scanners.py
+    ├── standards.py · md_to_docx.py
+    └── with_server.py · run_scanners.py
 ```
 
 Runtime output lands in `.ac-code-skill/` in the target repo (git-ignored):

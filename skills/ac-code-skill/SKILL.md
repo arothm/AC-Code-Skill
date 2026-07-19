@@ -234,6 +234,26 @@ reboot) stop and ask. This phase changes server state, so it runs alone, after
 review and fixes — never concurrently with the read-only agents. Consolidate its
 Infra & deploy delta into memory afterward.
 
+## Record mode — capturing work the fleet didn't do
+
+**A skill is instructions loaded for a turn, not a daemon.** When the pipeline
+finishes, nothing of this skill keeps running: later fixes, deploys, incidents and
+debugging done outside a run are invisible to it. That is by design — but it
+leaves a real gap, because the *next* run then starts blind to everything that
+happened in between.
+
+So: **`ac-code-skill record <what happened>`** is a first-class, lightweight
+entry point. It runs no agents. It takes what the user (or you, working directly)
+just did — a fix applied by hand, a deploy, a rotated credential, an incident and
+its root cause, a decision — verifies it against the current source, passes it
+through the privacy gate (`scripts/redact.py --strict`), and consolidates it into
+`memory.md` under the right section, superseding anything it contradicts.
+
+Use it whenever meaningful work happened outside a run. Prompt for it at the end
+of a session that changed things, and honour it the moment a user asks "did you
+record that?" — the honest answer today is "only if it was recorded", so make
+recording cheap. The `Stop` hook in `references/hooks.md` automates the reminder.
+
 ## Continuous mode (optional)
 
 The fleet is normally invoked on demand. `references/hooks.md` ships a small
