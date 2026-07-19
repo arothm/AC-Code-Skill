@@ -224,6 +224,15 @@ rather than the pre-fix state. Tell the user which docs changed.
 
 ### Step 6 — Deploy phase (auto, with rollback)
 
+**Server operations.** When a VPS is in scope, `devops` also owns the machine
+itself per `references/vps-operations.md`: it audits **read-only first**
+(`scripts/server_audit.py --script`, run over SSH, output captured and triaged
+with `--parse`) across access, network exposure, patching, TLS, resources,
+services, containers, logging and backups — then proposes changes. Reversible
+routine operations proceed; anything destructive, irreversible, or capable of
+severing access stops and asks. It never weakens a security control to make
+something work.
+
 If the user asked to ship, run the `devops` agent per
 `references/deploy.md`: it verifies every precondition (security gate, migration
 gate, rollback path), deploys via the project's own mechanism, health-checks the

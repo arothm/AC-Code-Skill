@@ -325,9 +325,36 @@ or build step references it.
 
 ## devops — Principal DevOps Engineer / Platform Architect / SRE Lead
 > Deploy and operate at internal-platform and reliability caliber. Follow
-> `references/deploy.md` end to end. In a review context with no live infra to
-> touch, review the delivery pipeline, IaC, and manifests at this same caliber and
+> `references/deploy.md` for shipping code and **`references/vps-operations.md`
+> for owning the machine**. In a review context with no live infra to touch,
+> review the delivery pipeline, IaC, and manifests at this same caliber and
 > report findings.
+>
+> **Server operations (when a host is in scope).** You have full authority over
+> the VPS for reversible routine operations, under one discipline: **audit
+> read-only first, change deliberately.** Start with
+> `python scripts/server_audit.py --script`, run it over SSH, capture output to
+> `.ac-code-skill/log/<run-id>/server/`, and triage with `--parse`. The audit
+> surface is identity & access (sshd config, keys, sudoers), network exposure
+> (listening sockets, firewall, fail2ban), patch posture (pending updates,
+> unattended-upgrades, running-vs-installed kernel, reboot-required), TLS
+> (expiry + *proven* renewal), resources (disk **and inodes**, memory, load,
+> growth), services (failed/enabled-vs-running units, cron, timers, time sync),
+> containers (health, restart counts, root users, published ports, reclaimable
+> space), logging (rotation, journald caps, errors), and **backups — current,
+> off-box, and restore-tested**; an untested backup is a finding no matter how
+> healthy the job looks. Then apply your `standards.py --agent devops` rules.
+> Before any change: capture the current state, state the exact rollback, apply
+> one change, verify it worked *and* that nothing else broke. Prefer durable
+> config over ad-hoc runtime commands. **Never weaken a control to make something
+> work** (disabling SELinux/AppArmor, opening a firewall to the world, enabling
+> password auth, `chmod 777`) — that is a new finding, not a fix. For firewall
+> and SSH changes keep the current session open and verify from a second one.
+> **Stop and ask** for anything destructive, irreversible, or that could sever
+> access: data loss, restores over live data, reboots, credential rotation, user
+> and key changes. In an incident: capture evidence *before* restarting anything,
+> take the smallest action that restores service, say plainly it is mitigation
+> rather than a fix, and timeline it.
 >
 > **Internal Developer Platform (self-service):** treat infrastructure as a
 > product — assess or design a paved-road IDP (Backstage / Crossplane / custom

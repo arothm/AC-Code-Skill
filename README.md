@@ -23,7 +23,7 @@ security scanning use MCP connectors or tools you already have, with graceful fa
 | **Backend** | Distributed Systems Architect | concurrency & back-pressure, distributed correctness (idempotency, CAP, consensus/CRDT), data architecture & query plans, API/event governance, migration safety |
 | **Cyber Security** | AppSec Architect | logic flaws beyond scanners, crypto engineering, CI security gates, identity, supply chain (SBOM/SLSA), secrets, PII, advisory deps |
 | **Tester** | Quality Architect (SDET) | all testing (unit/integration/e2e, both layers), suite strategy, flakiness root-causing, contract/perf/chaos, coverage, test authoring |
-| **DevOps** | Platform Architect / SRE | self-service IDP, zero-downtime delivery (GitOps/canary), K8s/IaC, observability-as-code, deploy + auto-rollback, dep upgrades |
+| **DevOps** | Platform Architect / SRE | self-service IDP, zero-downtime delivery (GitOps/canary), K8s/IaC, observability-as-code, deploy + auto-rollback, **full VPS ownership** — audit, harden, operate, incidents |
 | **Docs** | Documentation Architect | PRD/BRD/FDD/TDD/ADR as **Word `.docx`** — auto-generated after review, auto-updated after fixes |
 | **AI Agent Engineer** | Agentic Systems Architect | prompts & injection defence, agent/RAG architecture, evals, model choice, cost, guardrails — *dispatched only when the repo has AI features* |
 
@@ -57,9 +57,10 @@ spelled out — while staying strictly in scope.
   applied before anything is persisted. `file:line` and public URLs are PASS-classed so
   findings stay reproducible; internal IPs are hashed so they stay correlatable without
   publishing your topology.
-- **27 enforced standards** (`standards.csv`) — skeleton loaders over spinners, labels on
+- **36 enforced standards** (`standards.csv`) — skeleton loaders over spinners, labels on
   every input, no N+1, rate limiting, per-user AI token caps, HSTS/HTTP-3, semantic HTML,
-  privacy policy on commercial work, secrets only in a gitignored `.env`, and more. Each is
+  privacy policy on commercial work, secrets only in a gitignored `.env`, key-only SSH,
+  default-deny firewall, no public datastores, restore-**tested** backups, and more. Each is
   owned by exactly one agent and carries a **`verify` column stating how to prove it** —
   a rule you cannot check is a wish.
 - **Living docs as Word files**, regenerated after fixes so they never drift from the code.
@@ -125,6 +126,11 @@ python scripts/redact.py --explain                          # the policy table
 # Render docs to Word
 python scripts/md_to_docx.py --in-dir src --out-dir .ac-code-skill/docs
 
+# Audit a server READ-ONLY (this script never connects anywhere itself)
+python scripts/server_audit.py --script > audit.sh
+ssh host 'bash -s' < audit.sh > captured.txt
+python scripts/server_audit.py --parse captured.txt
+
 # Testing/security helpers used by the agents
 python scripts/with_server.py --help
 python scripts/run_scanners.py --help
@@ -144,6 +150,7 @@ skills/ac-code-skill/
 │   ├── design-inspiration.md   # aesthetic direction + IP guardrails
 │   ├── report-format.md        # agent output + merged report shape
 │   ├── deploy.md               # deploy runbook, rollback, gates
+│   ├── vps-operations.md       # owning the server: audit, harden, operate, incidents
 │   └── hooks.md                # optional continuous mode
 ├── data/                       # self-validating datasets
 │   ├── styles.csv · palettes.csv · font-pairings.csv
@@ -153,7 +160,8 @@ skills/ac-code-skill/
 └── scripts/                    # stdlib-only helpers
     ├── design_system.py · recall.py · redact.py
     ├── standards.py · md_to_docx.py
-    └── with_server.py · run_scanners.py
+    ├── server_audit.py · with_server.py
+    └── run_scanners.py
 ```
 
 Runtime output lands in `.ac-code-skill/` in the target repo (git-ignored):
