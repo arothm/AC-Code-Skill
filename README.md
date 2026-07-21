@@ -15,9 +15,14 @@ security scanning use MCP connectors or tools you already have, with graceful fa
 
 ```bash
 # Claude Code
-/plugin marketplace add arothm/CCSkill
+/plugin marketplace add arothm/AC-Code-Skill
 /plugin install ac-code-skill@ccskill
 ```
+
+For Claude Desktop / Cowork, download the bundle and upload it under
+**Settings → Capabilities → Skills**:
+
+[![Download the .skill](https://img.shields.io/badge/⬇_download-ac--code--skill.skill-2563EB?style=for-the-badge)](https://github.com/arothm/AC-Code-Skill/raw/main/ac-code-skill.skill)
 
 > "Use ac-code-skill on this repo. Run the full review in parallel and give me one
 > prioritized report. Don't change anything yet."
@@ -288,14 +293,20 @@ immediately, but other components need `/reload-plugins` or a restart.
 
 **Skills folder**
 ```bash
-git clone https://github.com/arothm/CCSkill.git
-cp -r CCSkill/skills/ac-code-skill ~/.claude/skills/ac-code-skill
+git clone https://github.com/arothm/AC-Code-Skill.git
+cp -r AC-Code-Skill/skills/ac-code-skill ~/.claude/skills/ac-code-skill
 ```
 
-**Claude Desktop / Cowork** — upload the prebuilt `ac-code-skill.skill` under
-**Settings → Capabilities → Skills**. Rebuild after edits:
+**Claude Desktop / Cowork** — download the prebuilt bundle and upload it under
+**Settings → Capabilities → Skills**:
+
+[![Download the .skill](https://img.shields.io/badge/⬇_download-ac--code--skill.skill-2563EB?style=for-the-badge)](https://github.com/arothm/AC-Code-Skill/raw/main/ac-code-skill.skill)
+
+Rebuild it after editing the skill with the bundled build script (forward-slash
+paths, no bytecode — validates for desktop upload):
 ```bash
-cd CCSkill/skills && zip -r ../ac-code-skill.skill ac-code-skill
+python build.py            # writes ac-code-skill.skill
+python build.py --check    # verify an existing bundle
 ```
 
 ## Status & limitations
@@ -314,10 +325,12 @@ Stated plainly, because the skill itself forbids overclaiming:
   checks them deliberately.
 - **`server_audit.py` has not yet run against a live host.** Its read-only property is
   verified; its triage patterns are tested against synthetic output.
-- **The `.skill` bundle is committed and rebuilt by hand**, so it can drift from source
-  until that's automated.
 - **No test suite for the scripts themselves** — the one place this project doesn't yet
   meet the bar its own Tester agent sets.
+
+The prebuilt `.skill` is rebuilt by `build.py` (which strips bytecode and normalises paths
+so it passes the desktop validator), but it's still committed rather than produced by CI, so
+re-run `python build.py` after editing the skill.
 
 ## Licence
 

@@ -1,29 +1,20 @@
 ---
 name: ac-code-skill
 description: >-
-  Orchestrate a fleet of seven principal-level subagents over a codebase —
-  Frontend, Backend, Cyber Security, Tester, DevOps, Docs (PRD/FDD/BRD/TDD/ADR),
-  and an AI Agent Engineer for repos with AI/LLM features — coordinated through
-  one shared persistent memory plus living docs. Agents run in parallel, retrieve
-  the relevant slice of memory/docs each run, and verify everything instead of
-  asserting (contrast is computed, font imports are probed, a blocking finding
-  needs a second agent to reproduce it); they enforce 37 owned standards, check
-  for outdated and dead/unused dependencies and dead code, then merge into one
-  prioritized report delivered in chat and on disk. Docs generate as Microsoft
-  Word after review and update after fixes; fixes apply only with approval;
-  deploys run with health-check and rollback; and when a server is in scope
-  DevOps audits and operates the VPS read-only-first. It also generates verified
-  design systems (palettes with measured WCAG contrast, fonts, motion libraries)
-  from a plain-language brief. "run ac-code-skill" runs the whole pipeline end to
-  end; an empty repo triggers a from-scratch interview; and "ac-code-skill
-  record <note>" captures out-of-band work into memory. Use this skill whenever
-  the user wants to test, review, lint, clean up, simplify, audit, security-check,
-  design-check or design, document, scaffold, operate a server, or deploy a
-  codebase using multiple or "several" agents, across frontend AND backend, or
-  for a pre-PR / pre-merge / release quality sweep — even if they don't say
-  "skill" or "fleet." Prefer it over ad-hoc single reviews whenever work splits
-  into independent specialized tasks or when the user mentions a shared agent
-  memory.
+  Orchestrate seven principal-level subagents over a codebase — Frontend,
+  Backend, Cyber Security, Tester, DevOps, Docs (PRD/FDD/BRD/TDD/ADR), plus an AI
+  Agent Engineer for AI/LLM repos — sharing one persistent memory and living
+  docs. Agents run in parallel and verify instead of asserting (contrast
+  computed, font imports probed, blocking findings need a second agent), enforce
+  owned quality/security/a11y/SEO standards, sweep dead code and outdated deps,
+  then merge into one prioritized report in chat and on disk. Docs generate as Word; fixes are
+  approval-gated; deploys health-check and roll back; DevOps can audit and
+  operate a VPS; and it builds design systems from a brief. "run ac-code-skill"
+  runs the whole pipeline; an empty repo triggers a from-scratch
+  interview. Use it whenever the user wants to test, review, clean up, audit,
+  design, document, scaffold, operate a server, or deploy — across frontend and
+  backend, or for a pre-PR/pre-merge/release sweep — even without saying "skill"
+  or "fleet."
 ---
 
 # AC Code Skill
@@ -169,7 +160,9 @@ browser/viewport part for responsive & color checks; `security` uses
 testing **zero-dependency**: server lifecycle via the bundled stdlib script
 `scripts/with_server.py` (run `--help`, use as a black box), browser automation
 via a **Playwright/browser MCP if one is connected** (with a clearly-labeled
-static fallback when it isn't), security scanning via `scripts/run_scanners.py`
+static fallback when it isn't; **prefer an isolated in-app/sandboxed browser MCP
+over the user's real or paired Chrome** — see `references/testing-harness.md`),
+security scanning via `scripts/run_scanners.py`
 (runs only what's already installed). It also enforces preferring the project's
 own test runner over ad-hoc automation, reconnaissance-then-action for browser
 work, and saving evidence (screenshots, console logs, traces, scanner output) to

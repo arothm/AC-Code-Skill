@@ -36,7 +36,22 @@ The skill installs nothing. Two consequences:
 - **Browser control** (rendering, clicking, screenshots, console logs) is done
   through a **Playwright/browser MCP if one is connected** — not a bundled
   Playwright install. Check for an available browser/Playwright MCP first.
-  - If present: drive the browser through the MCP tools.
+  - **Browser preference (important — respect the user's isolation choice).**
+    When more than one browser MCP is available, ALWAYS prefer an isolated,
+    sandboxed browser over the user's real logged-in browser. This is a category
+    rule, not a fixed tool list — judge by *isolated vs. the user's real browser*.
+    Order:
+    1. An in-app / sandboxed browser MCP (e.g. `mcp__Claude_Browser__*`) —
+       isolated, no personal logins, no history. **Use this by default.**
+    2. A Playwright MCP (e.g. `mcp__playwright__*`) — its own throwaway
+       Chromium, also isolated.
+    **NEVER** use the user's real or paired Chrome (e.g.
+    `mcp__claude-in-chrome__*`, or a Playwright launched with `--channel chrome`)
+    for skill testing unless the user explicitly asks for it in this run — it
+    carries their live logins, cookies, and history, and driving it is a privacy
+    and safety hazard.
+  - If present: drive the browser through the MCP tools (following the preference
+    order above).
   - If absent: do **not** fabricate rendered results. Run the project's own
     headed/e2e suite if it has one, otherwise fall back to static code analysis
     and clearly mark those findings **"unverified (no browser available)"** so
