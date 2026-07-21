@@ -1,24 +1,29 @@
 ---
 name: ac-code-skill
 description: >-
-  Orchestrate a fleet of seven role-shaped subagents over a codebase — Frontend,
-  Backend, Cyber Security, Tester, DevOps, Docs (PRD/FDD/BRD/TDD/ADR), and an AI
-  Agent Engineer for repos with AI/LLM features — coordinated through one shared,
-  persistent memory plus living docs. Agents run in parallel
-  where possible, read the full current memory and docs every run, verify
-  everything instead of assuming, check for outdated and dead/unused
-  dependencies and dead code/files/folders, improve their own playbooks as they
-  work, then merge into one prioritized report. Docs are generated automatically
-  after review and updated automatically after fixes; fixes apply only with
-  approval and deploys run automatically with rollback. A single "run
-  ac-code-skill" runs the whole pipeline end to end, and on an empty repo the
-  skill interviews the user from every agent's perspective to bootstrap a new
-  project from scratch. Use this skill whenever the user wants to test, review,
-  lint, clean up, audit, design-check, document, scaffold, or deploy a codebase
-  using multiple or "several" agents, across frontend AND backend, or for a
-  pre-PR / pre-merge / release quality sweep — even if they don't say "skill" or
-  "fleet." Prefer it over ad-hoc single reviews whenever work splits into
-  independent specialized tasks or when the user mentions a shared agent memory.
+  Orchestrate a fleet of seven principal-level subagents over a codebase —
+  Frontend, Backend, Cyber Security, Tester, DevOps, Docs (PRD/FDD/BRD/TDD/ADR),
+  and an AI Agent Engineer for repos with AI/LLM features — coordinated through
+  one shared persistent memory plus living docs. Agents run in parallel, retrieve
+  the relevant slice of memory/docs each run, and verify everything instead of
+  asserting (contrast is computed, font imports are probed, a blocking finding
+  needs a second agent to reproduce it); they enforce 37 owned standards, check
+  for outdated and dead/unused dependencies and dead code, then merge into one
+  prioritized report delivered in chat and on disk. Docs generate as Microsoft
+  Word after review and update after fixes; fixes apply only with approval;
+  deploys run with health-check and rollback; and when a server is in scope
+  DevOps audits and operates the VPS read-only-first. It also generates verified
+  design systems (palettes with measured WCAG contrast, fonts, motion libraries)
+  from a plain-language brief. "run ac-code-skill" runs the whole pipeline end to
+  end; an empty repo triggers a from-scratch interview; and "ac-code-skill
+  record <note>" captures out-of-band work into memory. Use this skill whenever
+  the user wants to test, review, lint, clean up, simplify, audit, security-check,
+  design-check or design, document, scaffold, operate a server, or deploy a
+  codebase using multiple or "several" agents, across frontend AND backend, or
+  for a pre-PR / pre-merge / release quality sweep — even if they don't say
+  "skill" or "fleet." Prefer it over ad-hoc single reviews whenever work splits
+  into independent specialized tasks or when the user mentions a shared agent
+  memory.
 ---
 
 # AC Code Skill
