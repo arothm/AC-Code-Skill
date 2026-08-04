@@ -15,15 +15,19 @@ run if it isn't there).
 ```
 .ac-code-skill/
 ├── memory.md            # the consolidated, always-current project knowledge base
-├── docs/                # generated formal docs as Word .docx (PRD/BRD/FDD/TDD/ADR) — regenerated each run
+├── docs/                # generated formal docs as Word .docx (the types the user chose) — refreshed each run
 ├── design-system/       # generated design system (only when UI work happens)
 │   ├── MASTER.md        #   global design rules: tokens, type, pattern, anti-patterns
 │   └── pages/<name>.md  #   per-page overrides; inherit everything not restated
 └── log/
     └── <run-id>/
-        ├── <agent>.md   # each agent's raw report for this run
-        ├── docs-src/    # markdown sources the docs agent rendered to .docx
-        └── report.md    # the merged report for this run
+        ├── <agent>.md               # each agent's raw report for this run
+        ├── screens/                 # viewport screenshots, console + network captures
+        ├── server/                  # raw server-audit output (devops)
+        ├── docs-src/                # markdown sources the docs agent rendered to .docx
+        ├── report.md                # the merged review report
+        ├── fix-verification.md      # per-finding fixed / not fixed / regressed verdicts
+        └── post-deploy-report.md    # the single post-deploy verification pass
 ```
 
 `memory.md` is the durable brain. `docs/` is the living, human-readable design
@@ -78,11 +82,17 @@ state. Concretely, the coordinator writes memory and regenerates docs: after the
 review phase, after applying fixes, after docs, and after deploy. Frequent small
 consolidations keep memory current without ever risking a concurrent write.
 
-- **After review:** consolidate deltas → `memory.md`, then generate `docs/` from
-  the merged report + memory, then hand the user the report.
-- **After approved fixes:** consolidate the fix outcomes → `memory.md`, then
-  **regenerate `docs/`** so the documentation reflects the fixed code, not the
-  pre-fix code.
+- **After review:** consolidate deltas → `memory.md`, then ask which docs the user
+  wants, generate them from the merged report + memory, then hand the user the
+  report.
+- **After approved fixes and their re-review:** consolidate the fix outcomes *and
+  the per-finding verdicts* (`fixed` / `not fixed` / `regressed`) → `memory.md`,
+  then **regenerate `docs/`** so the documentation reflects the fixed, verified
+  code rather than the pre-fix code. A finding confirmed `fixed` stops being
+  "present" — reconcile its status everywhere it appears.
+- **After deploy and its verification pass:** consolidate the *Infra & deploy*
+  delta and the post-deploy verdict. The tree is no longer "not yet deployed";
+  say what shipped and what the verification found.
 
 ## Agent learnings (the self-improvement store)
 

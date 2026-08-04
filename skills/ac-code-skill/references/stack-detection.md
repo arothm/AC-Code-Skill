@@ -25,9 +25,13 @@ inferring it**: *"Is this project private/internal, or commercial/public?"*
 Record the answer in memory's *Project preferences* (`context: private|commercial`)
 and pass it to every agent as `standards.py --context <value>`. Once recorded, it
 drives the gated standards on this and every later run without asking again — the
-user can change it. While you're asking, this is the natural moment to capture the
-other one-time preferences too (which docs the user wants — see the `docs` brief;
-whether the fleet should own DevOps — see the `devops` brief).
+user can change it. While you're asking, capture the other **pre-review** preference
+too: whether the fleet should own DevOps (see the `devops` brief).
+
+**Not asked here: which docs the user wants.** That question belongs to Step 4,
+after the review has established what the project is — asking it before anything has
+been read makes the user choose blind and lengthens the one prompt that stands
+between them and the run.
 
 ## 1. Find the subprojects
 

@@ -96,6 +96,61 @@ Is the target static HTML?
        └─ Yes → navigate → wait for network idle → screenshot/inspect → act
 ```
 
+## Policy 3b — Exercise the running product (mandatory for `tester` on any runnable UI)
+
+The suite proves the code the team thought to test. Running the app proves the
+product. **`tester` does both**, and this sweep is not optional when there is a UI
+and an isolated browser MCP to drive it with.
+
+Bring the app up with `scripts/with_server.py`, then work through this list per
+primary screen. Screens come from memory's *Testing harness* section if recorded,
+otherwise from the router/route table (read it — don't guess the URLs).
+
+**1. Both viewports, eyeballed.**
+Render each screen at **desktop 1440×900** and **mobile 375×812**, screenshot both,
+and actually look: overflow and horizontal scroll, overlapping or clipped text,
+off-screen or unreachable controls, collapsed layouts, images that don't scale, tap
+targets under 44px, and anything that reads as broken to a human. The DOM being
+correct and the page looking right are different claims — this one is visual.
+
+**2. Every clickable element, actually clicked.**
+Enumerate the interactive controls on the screen (buttons, links, nav and menu
+items, tabs, accordions, form submits, modal open/close, pagination, icon-only
+controls) and exercise each one. Report anything that is:
+- **dead** — click produces no state change, no navigation, no request;
+- **misrouted** — goes somewhere other than its label promises, or 404s;
+- **silently failing** — the UI reports success while the network says otherwise;
+- **keyboard-unreachable** — no focus, or no activation via Enter/Space (this is a
+  `frontend` a11y finding too — report it, and let the merge dedupe).
+Destructive controls (delete, pay, send, deactivate) are exercised **only** against
+disposable local/staging data — never against production or real user records. If
+you can't reach the flow safely, say so instead of clicking it.
+
+**3. Console and network on every action.**
+Around each interaction, capture:
+- **console** — errors *and* warnings, including React/Vue key and hydration
+  warnings, CSP violations, and uncaught promise rejections;
+- **network** — failed requests, 4xx/5xx, requests that never resolve, duplicated or
+  waterfalled calls on a single action;
+- **response bodies** — read them. A `200` carrying `{"error": …}`, an empty payload
+  where the UI expects a list, or a stack trace in the body is a finding the status
+  code hides. This is the check most automation skips.
+Page load counts as an action: capture the console and network of the initial load
+for every screen too.
+
+**4. Report per screen, with artefacts.**
+One block per screen: viewport screenshots, the control inventory with pass/fail per
+control, the console and network findings, and the artefact paths. A flow claimed
+without an artefact is "likely", not verified (Policy 4).
+
+**Fix-phase re-exercise.** When Step 5 fixes touch the UI or a flow, `tester`
+re-runs this sweep **scoped to the affected screens** before the fix is marked
+verified. A UI fix confirmed only by a green unit test has not been confirmed.
+
+**No browser MCP?** Say so, run the project's own e2e suite instead, and label
+everything visual or flow-based **"unverified (no browser)"**. Never describe a
+screen you did not render or a click you did not perform.
+
 ## Policy 4 — Capture evidence to `.ac-code-skill/log/<run-id>/`
 
 "Never assume" means your claims should be backed by artifacts the user can

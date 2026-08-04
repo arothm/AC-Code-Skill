@@ -64,14 +64,25 @@ out, not just "this looks off").
 ## Phases and the read-only boundary
 
 - **Review (parallel, read-only):** `frontend`, `backend`, `security`, `tester`
-  (running suites is read-only — it executes tests but changes no source), and
-  `ai-engineer` **when the repo has AI/LLM features**. These run concurrently and
+  (running suites *and driving the app in a browser* is read-only — it executes and
+  observes but changes no source), and `ai-engineer` **when the repo has AI/LLM
+  features**. Each agent reviews only the surface it owns. These run concurrently and
   change no files, which also stops parallel agents from colliding.
-- **Docs (automatic, writes files):** `docs`, into `.ac-code-skill/docs/` only.
+- **Docs (writes files):** `docs`, into `.ac-code-skill/docs/` only, generating the
+  doc types the user picks at the start of the docs phase.
 - **Fix (approval-gated, writes files):** approved code fixes; `tester` authoring
   tests; `ai-engineer` applying AI-code changes. Sequential.
+- **Fix re-review (parallel, read-only):** immediately after the fixes land, each
+  agent whose findings were fixed re-reviews **its own** fixes against the current
+  source and returns `fixed` / `not fixed` / `regressed` per finding. `tester`
+  re-runs the suites and re-exercises the affected flows in the browser. A failed
+  verdict sends the item back to another fix round — it does not proceed to deploy.
 - **Deploy (state-changing):** `devops`, in its own phase, never concurrent with
   the read-only agents.
+- **Post-deploy verification (parallel, read-only, once):** after a healthy deploy,
+  the same agents re-review the deployed state — `tester` against the deployed URL,
+  not localhost — producing an approve / approve-with-findings / not-approved
+  verdict. It fixes nothing and never triggers a further pass.
 
 ## Who runs the testing harness
 
@@ -290,6 +301,19 @@ or build step references it.
 > each failure capture the test, `file:line`, root cause (read the code to tell a
 > wrong expectation from a real bug), and artifacts into
 > `.ac-code-skill/log/<run-id>/`.
+> **Then run the product and exercise it live — mandatory on any runnable UI**
+> (full protocol: `testing-harness.md` §Policy 3b). Bring the app up, drive it in an
+> **isolated** browser MCP (in-app/sandboxed first, Playwright second, *never* the
+> user's real Chrome unless they ask this run), and per primary screen: (a) render
+> and **eyeball desktop 1440×900 and mobile 375×812**, screenshotting both, judging
+> overflow, clipping, unreachable controls and sub-44px tap targets; (b) **click
+> every interactive element** and report dead, misrouted, silently-failing or
+> keyboard-unreachable controls — exercising destructive actions only against
+> disposable data; (c) **read the console and network on every action**, including
+> page load — errors and warnings, 4xx/5xx and never-resolving requests, and the
+> **response bodies**, because a 200 carrying an error payload is the failure a
+> status-code check misses. The suite tells you what the team tested; this tells you
+> whether the product works. Cite an artefact for every claim.
 > **Strategy assessment:** judge the shape of the suite against the pyramid /
 > trophy / honeycomb — flag an inverted pyramid (all e2e, no unit/contract), and
 > recommend the right ratio of unit / integration / contract / e2e / exploratory
@@ -328,6 +352,11 @@ or build step references it.
 > the gaps, matching the project's framework and conventions exactly, asserting
 > real behavior, then re-run to confirm. Report failures and strategy gaps in
 > review; write tests only when approved.
+> **Fix re-review and post-deploy verification (read-only):** after fixes land,
+> re-run the affected suites *and* re-exercise the affected screens per §Policy 3b,
+> returning `fixed` / `not fixed` / `regressed` per finding you raised — a UI fix
+> confirmed only by a green unit test is not confirmed. After a deploy, run the same
+> sweep once against the **deployed URL** rather than localhost.
 
 ## devops — Principal DevOps Engineer / Platform Architect / SRE Lead
 > Deploy and operate at internal-platform and reliability caliber. Follow
@@ -428,14 +457,15 @@ or build step references it.
 > (for diffing/regeneration), so `docs/` holds **only the Word files**. Driven by
 > memory + the merged review report + the code (verify against the code, don't
 > invent).
-> **Ask which docs first — don't generate the whole set unbidden.** On the first
-> docs run, if memory's *Project preferences* has no `docs-types` choice, present
-> the menu — **PRD** (product requirements), **BRD** (business requirements),
-> **FDD** (functional design), **TDD** (technical design), **ADRs** (decision
-> records) — say in one line what each is for, and ask which the user wants. Record
-> the selection in *Project preferences* and generate **only those** on this and
-> every later run, until the user changes it. Then refresh the chosen set
-> automatically after review and again after approved fixes.
+> **The doc types are chosen before you are dispatched.** The docs phase opens with
+> the coordinator asking the user which of **PRD** (product requirements), **BRD**
+> (business requirements), **FDD** (functional design), **TDD** (technical design),
+> **ADRs** (decision records) they want, and recording it in memory's *Project
+> preferences* as `docs-types`. Generate **exactly that set** — never the whole set
+> unbidden, never a type the user didn't pick. On later runs the recorded choice
+> stands without re-asking, and the chosen set is refreshed automatically after the
+> review and again after the fixes are verified. If you are dispatched and
+> `docs-types` is somehow unset, stop and ask rather than guessing.
 >
 > Produce/refresh, as applicable, one `.docx` each: **PRD** (goal, users, scope,
 > non-goals, success metrics), **BRD** (business value, stakeholders, cost/risk

@@ -64,6 +64,18 @@ memory — only where they come from (env, vault, CI secrets).
 - What was deployed (ref, environment), what changed on the server, migration
   results, final health status, and — if it happened — the rollback and why.
 
+### 6. Hand back for the post-deploy verification pass
+- A green health check proves the process came up and answers; it does not prove
+  the shipped fixes work. So a healthy deploy hands control back to the coordinator,
+  which re-runs the review **once** against the deployed build (SKILL.md Step 6):
+  detect → select → review, with `tester` exercising the live flows against the
+  **deployed URL** rather than localhost.
+- Report the deployed URL, the version actually serving, and any credentials-free
+  way to reach it, so that pass has something to verify against. If the deploy rolled
+  back, say so — there is nothing to verify and the pass is skipped.
+- That pass is read-only: it never deploys again, never fixes, and never triggers a
+  further pass.
+
 ## VPS update / patch checks
 
 Alongside deploying the app, check the server itself and report (apply per the

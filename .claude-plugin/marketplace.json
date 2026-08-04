@@ -1,8 +1,7 @@
 {
   "name": "ccskill",
   "owner": {
-    "name": "arothm",
-    "email": "you@example.com"
+    "name": "arothm"
   },
   "metadata": {
     "description": "Personal Claude skills marketplace.",

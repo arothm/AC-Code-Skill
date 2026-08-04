@@ -80,6 +80,14 @@ Warnings, labelled "single-agent, unconfirmed"._
 - backend tests: <pass/fail + summary>
 - linters/type-checkers: <summary>
 
+## Live product exercise   (from `tester` — what was actually clicked and watched)
+_Omit only when there is no runnable UI. If no browser was available, say that here
+instead of leaving the section out — a silent omission reads as "nothing to report"._
+| Screen | Desktop 1440 | Mobile 375 | Controls tried | Dead/broken | Console | Network |
+|---|---|---|---|---|---|---|
+| <route> | ok / issue | ok / issue | <n> | <n> | <n err / n warn> | <n failed, n error-body> |
+- **<screen> — <what broke>** — `<control or request>` (artefact: `log/<run-id>/screens/<file>`)
+
 ## Standards compliance
 _From `data/standards.csv`, checked on every run that touches their surface.
 List each standard as met / violated / not-applicable — a standard silently
@@ -107,6 +115,52 @@ rough ROI (impact ÷ effort). Advisory — implementing one is approval-gated._
 ## Docs
 - Generated/updated as Word `.docx` at `.ac-code-skill/docs/`: <which docs>.
 ```
+
+## The fix-verification report (Step 5, after the fixes land)
+
+Each agent re-reviews **its own** fixes and returns a verdict per finding; you merge
+them into one table, save it to `.ac-code-skill/log/<run-id>/fix-verification.md`,
+and show it in chat. Deploy does not start with a `not fixed` or `regressed` row
+outstanding.
+
+```markdown
+# Fix verification — run <run-id>
+**Applied:** N fixes across M findings · **Verified:** X fixed · Y not fixed · Z regressed
+
+| Finding | file:line | Fix applied | Verdict | Verified by | Evidence |
+|---|---|---|---|---|---|
+| <short title> | `path:42` | <what changed> | **fixed** | <agent> | <test/artefact> |
+| <short title> | `path:88` | <what changed> | **not fixed** | <agent> | <how it still reproduces> |
+| <short title> | `path:12` | <what changed> | **regressed** | <agent> | <the new problem + severity> |
+
+## Next round   (only if anything is not fixed / regressed)
+- <what needs re-fixing, and whether it needs the user's approval again>
+```
+
+A verdict is a *re-derivation from the current source*, not a re-reading of the
+diff — the same rule that governs carried findings (shared-rules rule 1). "The patch
+looks right" is not a verdict.
+
+## The post-deploy verification report (Step 6, once)
+
+```markdown
+# Post-deploy verification — run <run-id>
+**Verdict:** APPROVED / APPROVED WITH FINDINGS / NOT APPROVED
+**Deployed:** <ref> to <environment> · **Verified against:** <deployed URL>
+**Health:** <status> · **Rollback:** <not needed | performed, why>
+
+## What was re-checked
+- <agents re-run, and the live flows exercised against the deployed build>
+
+## New findings on the deployed build
+- **[severity] <title>** — `file:line` or `<endpoint>` — <problem>. **Fix:** <suggestion>.
+
+## Recommendation
+- <ship as-is | roll back, and why — the user decides; this pass changes nothing>
+```
+
+This pass runs **once**, is **read-only**, and never triggers another one. Fixing
+what it finds means starting a fresh cycle.
 
 **Merge — don't staple.** Lead with the verdict and counts; group findings by
 severity, *not* by agent; deduplicate shared root causes into one entry that

@@ -3,18 +3,18 @@ name: ac-code-skill
 description: >-
   Orchestrate seven principal-level subagents over a codebase — Frontend,
   Backend, Cyber Security, Tester, DevOps, Docs (PRD/FDD/BRD/TDD/ADR), plus an AI
-  Agent Engineer for AI/LLM repos — sharing one persistent memory and living
-  docs. Agents run in parallel and verify instead of asserting (contrast
-  computed, font imports probed, blocking findings need a second agent), enforce
-  owned quality/security/a11y/SEO standards, sweep dead code and outdated deps,
-  then merge into one prioritized report in chat and on disk. Docs generate as Word; fixes are
-  approval-gated; deploys health-check and roll back; DevOps can audit and
-  operate a VPS; and it builds design systems from a brief. "run ac-code-skill"
-  runs the whole pipeline; an empty repo triggers a from-scratch
-  interview. Use it whenever the user wants to test, review, clean up, audit,
-  design, document, scaffold, operate a server, or deploy — across frontend and
-  backend, or for a pre-PR/pre-merge/release sweep — even without saying "skill"
-  or "fleet."
+  Agent Engineer for AI/LLM repos — sharing one persistent memory and docs. They
+  run in parallel, verify instead of asserting, enforce owned
+  quality/security/a11y/SEO standards, sweep dead code and stale deps, and merge into
+  one prioritized report. The Tester runs the app live in a browser: desktop and
+  mobile, every clickable element, console and network per action. Docs are the types
+  you pick, as Word; fixes are approval-gated then re-reviewed; deploys health-check,
+  roll back, and re-verify; DevOps can audit and operate a VPS.
+  "run ac-code-skill" runs the whole pipeline; an empty repo
+  triggers a from-scratch interview. Use it whenever the user wants to test, review,
+  clean up, audit, design, document, scaffold, operate a server, or deploy — across
+  frontend and backend, or for a pre-PR/pre-merge/release sweep — even without
+  saying "skill" or "fleet."
 ---
 
 # AC Code Skill
@@ -69,10 +69,17 @@ These are non-negotiable and are handed to every subagent (full text in
 0. **Memory & docs** — load or bootstrap the shared memory and docs.
 1. **Detect** the stack and scope — or, on an empty repo, enter greenfield mode.
 2. **Select & confirm** which agents to run.
-3. **Review phase** — dispatch read-only agents in parallel; merge into one report.
-4. **Docs phase (auto)** — generate/refresh docs into `.ac-code-skill/docs/`, then hand the user the report.
-5. **Fix phase** — apply approved fixes only, then auto-update the docs.
-6. **Deploy phase** — auto-deploy with rollback (if requested).
+3. **Review phase** — dispatch read-only agents in parallel, each on the surface it
+   owns; `tester` additionally **runs the app and exercises it live in an isolated
+   browser** (desktop + mobile, every clickable element, console + network on every
+   action). Merge into one report.
+4. **Docs phase** — ask which doc types the user wants, generate them, **then** hand
+   the user the report — full text in chat *and* saved as a file.
+5. **Fix phase** — apply approved fixes only, then **each owning agent re-reviews its
+   own fixes** and the docs are regenerated. The phase isn't done until the fixes are
+   verified.
+6. **Deploy phase** — deploy the approved fixes with rollback, then **re-run the
+   pipeline once as a post-deploy verification pass** to confirm the shipped state.
 
 Update memory (and regenerate docs where the phase says so) after each phase so
 later agents inherit fresh state, and file every agent's *Improvements* into
@@ -108,10 +115,11 @@ whether the repo has AI features into memory so no later agent re-derives them.
 **On the first run, ask the one-time preferences — don't guess them** (see
 `stack-detection.md` §0b). In a short batched prompt: is the project
 **private/internal or commercial/public** (drives the noindex vs privacy-policy
-standards); which **docs** the user wants (the `docs` menu); and — if a server may
-be in scope — whether the fleet should **own DevOps** (the `devops` consent flow,
-SSH-key only). Record all of it in memory's *Project preferences* and honour it on
-every later run without re-asking.
+standards); and — if a server may be in scope — whether the fleet should **own
+DevOps** (the `devops` consent flow, SSH-key only). Record both in memory's
+*Project preferences* and honour them on every later run without re-asking. The
+**docs the user wants** are asked at the start of Step 4, not here — that keeps the
+pre-review prompt short and asks the question at the moment it's actionable.
 
 ### Step 2 — Select the agents and confirm
 
@@ -144,7 +152,33 @@ below.)
 Launch every selected review agent in a single turn so they run concurrently —
 this is the point of the fleet. Use whatever subagent mechanism the environment
 provides (Task tool in Claude Code, Agent tool in Cowork); prefer a
-general-purpose type so each can run commands and read files.
+general-purpose type so each can run commands and read files. **Each agent reviews
+only the surface it owns** (`agent-roles.md`); overlapping territory is what makes
+a fleet cost more than one agent and find less.
+
+**`tester` also runs the product and exercises it live.** Reading the code and
+running the suite is not the same as watching the app work, so on any repo with a
+runnable UI the `tester` agent brings the app up (`scripts/with_server.py`) and
+drives it through an **isolated browser MCP** — the in-app/sandboxed browser first,
+a Playwright MCP second, *never* the user's real logged-in Chrome unless they ask
+for it this run. The mandatory sweep, specified in full in
+`references/testing-harness.md` §Policy 3b:
+
+- **Both viewports.** Eyeball every primary screen at **desktop (1440×900)** and
+  **mobile (375×812)** — screenshot each, and judge the rendering, not just the DOM.
+- **Every clickable element.** Enumerate the interactive controls on each screen
+  (buttons, links, menus, tabs, form submits, modals) and actually click them.
+  Report anything dead, misrouted, silently failing, or unreachable by keyboard.
+- **Console + network on every action.** Before/after each interaction, read the
+  console for errors and warnings and the network log for failed requests, 4xx/5xx
+  responses, and responses whose *body* carries an error while the status says 200.
+- **Evidence or it didn't happen.** Screenshots, console dumps, and the request/
+  response log go to `.ac-code-skill/log/<run-id>/`; every claim cites its artefact.
+
+If no isolated browser MCP is available, `tester` says so plainly, falls back to the
+project's own e2e suite, and labels anything it couldn't render
+**"unverified (no browser)"** — a missing browser is itself a finding, never a
+reason to describe a flow it never ran.
 
 Each dispatch = **shared-rules.md** (the five principles) + the agent's block
 from `references/agent-roles.md` + the detected `{commands}` and `{scope}` +
@@ -181,10 +215,9 @@ findings by severity (not by agent), deduplicate shared root causes, keep
 have a second agent already in the run independently re-derive it from source**
 — unreproduced findings ship as warnings labelled "single-agent, unconfirmed"
 (shared-rules rule 1), because a blocking finding stops merges and deploys.
-Run the merged report through `scripts/redact.py --strict`, then **deliver it in
-both places: save the full report to `.ac-code-skill/log/<run-id>/report.md` AND
-render the full report into the chat** (not just a summary — see
-`report-format.md`). Consolidate the agents' Memory deltas into `memory.md` —
+Run the merged report through `scripts/redact.py --strict` and **save it to
+`.ac-code-skill/log/<run-id>/report.md`** — but hold the chat copy until Step 4
+delivers both together. Consolidate the agents' Memory deltas into `memory.md` —
 through the same privacy gate — and file their *Improvements* under *Agent
 learnings*.
 
@@ -197,29 +230,54 @@ a **quick diff-check**, tell agents to skip enhancements and omit the section �
 there the user wants defects only, not a roadmap. **Do not hand the report to the
 user yet — generate docs first (Step 4).**
 
-### Step 4 — Docs (then deliver the report)
+### Step 4 — Ask which docs, generate them, then deliver the report
 
-Once the review is merged, dispatch the `docs` agent to generate or refresh the
-project's docs into `.ac-code-skill/docs/`, built from memory + the merged report
-+ the code (verified, not invented). **Generate only the doc types the user
-chose** — on the first docs run the agent presents the menu (PRD / BRD / FDD / TDD
-/ ADRs, one line each) and records the selection in *Project preferences*;
-thereafter it refreshes exactly that set (see the `docs` brief). Docs are
-delivered as **Microsoft Word (`.docx`)** via `scripts/md_to_docx.py`
-(zero-dependency; uses `pandoc` if present). Then deliver the report per Step 3 —
-full report in chat and on disk — and point to the refreshed `.docx` docs. Skip
-docs only if the user opted out.
+**Ask first.** Once the review is merged, present the doc menu — **PRD** (product
+requirements), **BRD** (business requirements), **FDD** (functional design),
+**TDD** (technical design), **ADRs** (decision records) — one line each on what it's
+for, and ask which the user wants. Record the answer in memory's *Project
+preferences* as `docs-types`; on every later run **generate exactly that set without
+re-asking** (the user can change it any time, and "none" is a valid answer that
+skips the phase). This is the moment to ask because the review has just established
+what the project actually is.
 
-### Step 5 — Fix phase (only after approval), then update docs
+**Then generate.** Dispatch the `docs` agent to build or refresh the chosen set into
+`.ac-code-skill/docs/`, from memory + the merged report + the code — verified against
+the source, never invented. Docs ship as **Microsoft Word (`.docx`)** via
+`scripts/md_to_docx.py` (zero-dependency; uses `pandoc` if present), with the
+markdown sources staged under `log/<run-id>/docs-src/`.
 
-Report first, then fix. Offer fixes in approve-able batches (e.g. "all
-auto-formatting," "the 3 null-check bugs," "the 2 security fixes," "remove the 4
-confirmed-dead files/deps") rather than one yes/no. Prefer safe mechanical fixes
-first; flag behavioral changes (logic, test expectations, security semantics,
-dependency removals/upgrades) for explicit per-item confirmation. Apply approved
-fixes yourself or via a dedicated fix subagent **sequentially** (writes must be
-ordered), then re-run the relevant tests/scanners to confirm the fix landed and
-nothing regressed. Never touch anything the user didn't approve.
+**Then deliver the report — in both places, in full.** Save it to
+`.ac-code-skill/log/<run-id>/report.md` **and** render the whole thing in the chat
+(not a summary with a file link — see `report-format.md`), and point to the
+refreshed `.docx` docs at the end.
+
+### Step 5 — Fix phase (only after approval), then re-review and update docs
+
+Report first, then fix. Work from the merged report — every fix traces to a finding
+in it. Offer fixes in approve-able batches (e.g. "all auto-formatting," "the 3
+null-check bugs," "the 2 security fixes," "remove the 4 confirmed-dead files/deps")
+rather than one yes/no. Prefer safe mechanical fixes first; flag behavioral changes
+(logic, test expectations, security semantics, dependency removals/upgrades) for
+explicit per-item confirmation. Apply approved fixes yourself or via a dedicated fix
+subagent **sequentially** (writes must be ordered), then re-run the relevant
+tests/scanners. Never touch anything the user didn't approve.
+
+**Then every owning agent re-reviews its own fixes — the phase is not done until it
+passes.** Re-dispatch the agents whose findings were fixed, **read-only and in
+parallel**, scoped to the fix diff, each carrying the list of findings it raised.
+Each returns a verdict per fix:
+
+- **fixed** — re-derived from the current source and confirmed resolved;
+- **not fixed** — the finding still reproduces (say how);
+- **regressed** — the fix introduced a new problem (report it at its own severity).
+
+`tester` re-runs the suites *and* re-exercises the affected flows in the browser per
+Step 3 — a UI fix confirmed only by a passing unit test is unverified. Anything that
+comes back `not fixed` or `regressed` goes into a second, smaller fix round; don't
+advance to deploy with a failed verdict outstanding. Report the verdict table to the
+user, then consolidate it into memory (a finding is no longer "present" once its fix
+is confirmed — reconcile the status everywhere, per `memory.md`).
 
 If the review flagged **coverage gaps**, offer to close them here too: on
 approval, `tester` writes tests for the specific untested code following the
@@ -228,11 +286,11 @@ flagged **AI/LLM issues**, `ai-engineer` applies those fixes here too. Both are
 write actions, so they're approval-gated like any other fix — never generate and
 commit tests or change prompts/agent code unasked.
 
-**After the approved fixes land, update memory and automatically regenerate the
-docs** (re-dispatch `docs`) so `.ac-code-skill/docs/` reflects the fixed code
-rather than the pre-fix state. Tell the user which docs changed.
+**Once the re-review passes, update memory and automatically regenerate the docs**
+(re-dispatch `docs`, same chosen set) so `.ac-code-skill/docs/` reflects the fixed,
+verified code rather than the pre-fix state. Tell the user which docs changed.
 
-### Step 6 — Deploy phase (auto, with rollback)
+### Step 6 — Deploy phase (approved, with rollback), then verify by re-running
 
 **Server ownership is consent-gated.** Check *Project preferences* → `devops-consent`.
 If it's `no`, don't dispatch `devops` for server work (in-repo pipeline/IaC review
@@ -262,6 +320,26 @@ with a proven rollback; destructive/irreversible actions (data loss, live-server
 reboot) stop and ask. This phase changes server state, so it runs alone, after
 review and fixes — never concurrently with the read-only agents. Consolidate its
 Infra & deploy delta into memory afterward.
+
+**Post-deploy verification — re-run the pipeline once to approve the shipped
+state.** A green health check proves the app came up, not that the fixes work in
+production. So once the deploy is healthy, run **Steps 1–3 again** against the
+deployed tree: re-detect (the deploy may have changed versions or config), re-select
+the same agents, and re-review — with `tester` exercising the live flows in the
+browser against the **deployed** URL, not localhost. Produce a short post-deploy
+report (`log/<run-id>/post-deploy-report.md`, plus in chat) with one of three
+verdicts: **approved** (clean), **approved with findings** (new non-blocking issues,
+listed), or **not approved** (a blocking finding on the deployed build — say
+plainly whether a rollback is warranted and let the user decide).
+
+Three guards on this pass, because a pipeline that re-runs itself must terminate:
+
+1. **It runs exactly once per deploy.** Its own output never triggers another
+   verification pass.
+2. **It is read-only.** No fixes, no docs regeneration, no second deploy. New
+   findings are *reported*, and fixing them means the user starting a fresh cycle.
+3. **Skip it when there is nothing to verify against** — no reachable deployed
+   environment, or a deploy that rolled back (report the rollback instead).
 
 ## Record mode — capturing work the fleet didn't do
 
@@ -297,12 +375,15 @@ never write them into settings unprompted.
 When the user says **`run ac-code-skill`** (or otherwise asks to just run the
 whole thing), execute the pipeline end to end without stopping to design it:
 load memory & docs → detect stack & scope → auto-select every agent the stack
-supports → run the full review in parallel → consolidate memory + learnings →
-generate docs → present one prioritized report. Then **stop at the gates**: offer
-the fix batches and, if configured, the deploy — those still need approval unless
-the user pre-authorized them in the same prompt ("run ac-code-skill, apply the
-safe fixes and deploy"). The one-prompt form removes the *planning* back-and-forth,
-not the *safety* gates on state-changing work.
+supports → run the full review in parallel, `tester` exercising the app live in the
+browser → consolidate memory + learnings → ask which docs and generate them →
+present one prioritized report. Then **stop at the gates**: offer the fix batches
+and, if configured, the deploy — those still need approval unless the user
+pre-authorized them in the same prompt ("run ac-code-skill, apply the safe fixes and
+deploy"). Once past a gate the phase completes in full, verification included: fixes
+are re-reviewed by their owning agents (Step 5) and a deploy is followed by the
+single post-deploy verification pass (Step 6). The one-prompt form removes the
+*planning* back-and-forth, not the *safety* gates on state-changing work.
 
 ## Greenfield bootstrap (fresh repo, build from scratch)
 

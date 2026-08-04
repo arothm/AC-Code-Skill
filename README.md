@@ -62,8 +62,9 @@ ac-code-skill record "<what happened>" → log out-of-band work into memory (run
 
 **What activation depends on:** the skill triggers on *codebase / multi-agent / quality*
 intent. A vague "help me with my code" may not auto-trigger — if it doesn't fire, just say
-**`run ac-code-skill`**. On the **first run** it asks three one-time questions (private or
-commercial? which docs? should it own DevOps?) and remembers the answers.
+**`run ac-code-skill`**. On the **first run** it asks two one-time questions up front
+(private or commercial? should it own DevOps?) and remembers the answers; which docs you
+want is asked later, in the docs phase.
 
 ---
 
@@ -91,11 +92,19 @@ Not sure who owns something? `python scripts/standards.py --who "rate limiting o
 0. Memory      load shared state; agents RETRIEVE their slice, not the whole corpus
 1. Detect      stack, real commands, dependencies, AI signals — or greenfield → interview
 2. Select      only the agents this repo and this request actually need
-3. Review      selected agents run in parallel, read-only → one merged report
-4. Docs        the doc types you chose, as .docx; then the full report is delivered (chat + file)
-5. Fix         approved batches only → docs regenerate afterwards
-6. Deploy      health-checked, auto-rollback; destructive actions stop and ask
+3. Review      agents run in parallel, read-only, each on the surface it owns — and the
+               Tester runs the app and clicks through it live in an isolated browser:
+               desktop + mobile, every clickable element, console + network per action
+4. Docs        you pick the doc types → generated as .docx → THEN the full report is
+               delivered (chat + file)
+5. Fix         approved batches only → each agent re-reviews its own fixes (fixed /
+               not fixed / regressed) → docs regenerate once the verdicts pass
+6. Deploy      approved, health-checked, auto-rollback → then the pipeline re-runs ONCE
+               against the deployed build to approve what shipped
 ```
+
+Verification is built into the phases that change things: nothing reaches deploy with an
+unverified fix, and nothing is called shipped until it's been re-reviewed live.
 
 ### Modes
 
@@ -104,7 +113,7 @@ Not sure who owns something? `python scripts/standards.py --who "rate limiting o
 | **Full run** | `run ac-code-skill` | the whole pipeline, stopping only at approval gates |
 | **Targeted** | "audit security", "check my tests" | only the matching agents |
 | **Greenfield** | empty repo | per-role intake interview → docs → scaffold |
-| **First-run setup** | first run on a repo | asks *once*, then remembers: private or commercial? which docs? should the fleet own DevOps? |
+| **First-run setup** | first run on a repo | asks *once*, then remembers: private or commercial? should the fleet own DevOps? (which docs you want is asked in phase 4, once the review knows what the project is) |
 | **Record** | `ac-code-skill record "<what happened>"` | captures out-of-band work (a hand fix, a deploy, an incident) into memory. A skill is instructions for a turn, not a daemon — this is how work done outside a run still reaches the next one |
 | **Continuous** | optional hooks | prime memory at session start, refuse a commit carrying a secret, typecheck on edit |
 
@@ -123,12 +132,22 @@ Not sure who owns something? `python scripts/standards.py --who "rate limiting o
   guessed**.
 - **The report lands in two places** — the full report is rendered in the chat *and*
   saved as `.ac-code-skill/log/<run-id>/report.md`, not buried behind a file link.
-- **Sees the UI when a browser MCP is connected.** With a Playwright/browser MCP, the
-  Frontend agent renders and eyeballs pages at every breakpoint, the Tester agent drives
-  real end-to-end flows and reads the console, and the design work can browse component
+- **It runs your product, not just your tests.** With an isolated browser MCP connected,
+  the Tester brings the app up and works through every primary screen: **desktop 1440 and
+  mobile 375**, screenshotted and eyeballed; **every clickable element actually clicked**
+  (dead, misrouted, silently-failing and keyboard-unreachable controls are findings); and
+  the **console and network read on every action** — including response *bodies*, because
+  a `200` carrying `{"error": …}` is the failure a status check misses. The Frontend agent
+  uses the same browser for breakpoints and a11y, and design work can browse component
   catalogues (shadcn/Aceternity/Magic UI/React Bits) and adapt licensed pieces to your
-  tokens — so a hundred users don't ship the same-looking site. Without it, findings are
-  labelled "unverified (no browser)" rather than faked.
+  tokens — so a hundred users don't ship the same-looking site. It prefers a sandboxed
+  browser and **never** drives your real logged-in Chrome unless you ask. Without a
+  browser, findings are labelled "unverified (no browser)" rather than faked.
+- **Fixes are verified, not just applied.** After a fix batch lands, the agent that raised
+  each finding re-derives it from the *current* source and returns **fixed / not fixed /
+  regressed** — UI fixes get re-exercised in the browser, not signed off by a green unit
+  test. Deploy doesn't start with a failed verdict outstanding, and a healthy deploy is
+  followed by one read-only re-run of the pipeline against the deployed build.
 - **Retrieved memory, not bulk-loaded.** Memory and docs grow without bound. `recall.py`
   returns a pinned core plus task-matched sections — measured at **7% of a 219 KB corpus**
   on a real repo — and *lists what it omitted*, so nothing is silently dropped.
