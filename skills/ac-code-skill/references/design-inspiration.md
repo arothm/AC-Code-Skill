@@ -47,7 +47,7 @@ and a clean footer information architecture. Use it to calibrate *how little* a
 premium page needs. Proprietary brand site — **inspiration only, never clone**.
 
 ### 2a. Vetted component libraries — `data/component-libraries.csv`
-Run `python scripts/standards.py --libraries`. Covers **shadcn/ui** (the base
+Run `python {skill_dir}/scripts/standards.py --libraries`. Covers **shadcn/ui** (the base
 layer; an official MCP exists — prefer it when connected), **Magic UI** and
 **Aceternity UI** (animated marketing blocks), **React Bits**, **React Icons**,
 and **Google Fonts**. Each row records delivery model, licence, best-for, and
@@ -117,13 +117,13 @@ Before reasoning from scratch, run the bundled composer — it turns a brief int
 concrete, self-verified spec in one command:
 
 ```bash
-python scripts/design_system.py "premium minimal SaaS landing page"
-python scripts/design_system.py "<brief>" --persist -o .ac-code-skill   # design-system/MASTER.md
-python scripts/design_system.py "<brief>" --page checkout -o .ac-code-skill
-python scripts/design_system.py --validate      # dataset gate; non-zero exit on failure (offline)
-python scripts/design_system.py --validate --check-fonts   # + probe providers for the families
-python scripts/design_system.py "<brief>" --stack react   # stack-aware motion-library pick
-python scripts/design_system.py --list styles   # or palettes | fonts | products | motion
+python {skill_dir}/scripts/design_system.py "premium minimal SaaS landing page"
+python {skill_dir}/scripts/design_system.py "<brief>" --persist -o .ac-code-skill   # design-system/MASTER.md
+python {skill_dir}/scripts/design_system.py "<brief>" --page checkout -o .ac-code-skill
+python {skill_dir}/scripts/design_system.py --validate      # dataset gate; non-zero exit on failure (offline)
+python {skill_dir}/scripts/design_system.py --validate --check-fonts   # + probe providers for the families
+python {skill_dir}/scripts/design_system.py "<brief>" --stack react   # stack-aware motion-library pick
+python {skill_dir}/scripts/design_system.py --list styles   # or palettes | fonts | products | motion
 ```
 
 It draws on bundled datasets (`data/styles.csv`, `palettes.csv`,

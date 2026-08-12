@@ -7,6 +7,16 @@ BACKSLASH path separators in the archive, and shipped __pycache__/*.pyc. This
 builds it right — forward-slash arcnames, junk excluded — so desktop/Cowork
 uploads validate without repackaging.
 
+Deliberately bundles ONLY skills/ac-code-skill/. The plugin's `agents/` and
+`hooks/` directories are Claude Code plugin components with no meaning in a
+.skill upload, and `tests/` is developer-only.
+
+--check also enforces the Agent Skills frontmatter contract, because that is the
+rule the desktop/Cowork upload path actually validates against: outside Claude
+Code only `name`, `description`, `allowed-tools`, `license`, `metadata` and
+`compatibility` are permitted, and any other key is a hard upload error rather
+than an ignored field.
+
     python build.py            # writes ac-code-skill.skill
     python build.py --check    # verify an existing bundle, don't rebuild
 """
@@ -54,26 +64,68 @@ def build():
     return 0
 
 
+# The Agent Skills spec allows only these keys. Claude Code accepts more, but a
+# .skill carrying an extra key fails desktop/Cowork upload with a hard error.
+SPEC_KEYS = {"name", "description", "allowed-tools", "license", "metadata", "compatibility"}
+DESC_LIMIT = 1024
+
+
+def check_frontmatter(text):
+    """Validate SKILL.md frontmatter against the Agent Skills spec. Returns problems."""
+    problems = []
+    if not text.startswith("---"):
+        return ["SKILL.md has no YAML frontmatter"]
+    fm = text.split("---", 2)[1]
+    keys, desc_lines, current = [], [], None
+    for line in fm.splitlines():
+        if line[:1] not in (" ", "\t", "") and ":" in line:
+            current = line.split(":", 1)[0].strip()
+            keys.append(current)
+            if current == "description":
+                rest = line.split(":", 1)[1].strip()
+                desc_lines = [] if rest in (">-", ">", "|", "|-", "") else [rest]
+        elif current == "description" and line.strip():
+            desc_lines.append(line.strip())
+    for k in keys:
+        if k not in SPEC_KEYS:
+            problems.append(f"frontmatter key {k!r} is not in the Agent Skills spec "
+                            f"(allowed: {', '.join(sorted(SPEC_KEYS))}) — .skill upload would fail")
+    if "description" not in keys:
+        problems.append("frontmatter has no description")
+    else:
+        n = len(" ".join(desc_lines))
+        if n > DESC_LIMIT:
+            problems.append(f"description is {n} chars, over the {DESC_LIMIT} limit")
+    return problems
+
+
 def check(path=OUT):
     if not os.path.exists(path):
         print(f"no bundle at {path}")
         return 1
     problems = []
     with zipfile.ZipFile(path) as z:
-        for name in z.namelist():
+        names = z.namelist()
+        for name in names:
             if "\\" in name:
                 problems.append(f"backslash path: {name}")
             if "__pycache__" in name or name.endswith((".pyc", ".pyo")):
                 problems.append(f"python bytecode shipped: {name}")
             if name.rsplit("/", 1)[-1] in EXCLUDE_NAMES:
                 problems.append(f"OS cruft shipped: {name}")
-        count = len(z.namelist())
+        skill_md = [n for n in names if n.endswith("/SKILL.md")]
+        if not skill_md:
+            problems.append("no SKILL.md in the bundle")
+        else:
+            problems += check_frontmatter(z.read(skill_md[0]).decode("utf-8"))
+        count = len(names)
     if problems:
         print(f"{path}: {len(problems)} PROBLEM(S)")
         for p in problems:
             print("  " + p)
         return 1
-    print(f"{path}: OK — {count} entries, forward-slash paths, no bytecode/cruft")
+    print(f"{path}: OK — {count} entries, forward-slash paths, no bytecode/cruft, "
+          f"spec-legal frontmatter")
     return 0
 
 

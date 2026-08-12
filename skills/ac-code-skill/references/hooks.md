@@ -10,6 +10,13 @@ into your settings unsilently** — show the config, explain what each hook cost
 and let the user install it (the `update-config` skill does this cleanly, or
 edit `.claude/settings.json` by hand).
 
+**A copy-paste-ready version ships with the plugin** at `hooks/hooks.json.example`
+(deliberately `.example`, so installing the plugin does not activate it). It uses
+`${CLAUDE_PLUGIN_ROOT}`, which resolves automatically inside a plugin. The version
+below uses a `$SKILL` variable you set yourself — use it when the skill is installed
+outside a plugin, since neither `${CLAUDE_PLUGIN_ROOT}` nor `${CLAUDE_SKILL_DIR}` is
+substituted inside `settings.json`.
+
 ## The three that earn their keep
 
 Set `SKILL` to wherever the skill lives (e.g. `~/.claude/skills/ac-code-skill`).

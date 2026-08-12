@@ -132,6 +132,15 @@ unverified fix, and nothing is called shipped until it's been re-reviewed live.
   guessed**.
 - **The report lands in two places** — the full report is rendered in the chat *and*
   saved as `.ac-code-skill/log/<run-id>/report.md`, not buried behind a file link.
+  `to_sarif.py` additionally emits SARIF 2.1.0, so findings can gate CI or land in
+  GitHub code scanning instead of only being read.
+- **Read-only is enforced, not requested.** The five review agents ship as Claude Code
+  agent definitions with no `Write` or `Edit` tool at all. The boundary that makes
+  parallel review safe is a property of the agent, not a sentence in a prompt.
+- **A finding is a pattern, so the fleet sweeps for its siblings.** Every confirmed
+  defect triggers variant analysis across the tree, reported as one entry listing every
+  `file:line`. A fix applied to 1 of 5 occurrences closes the finding while leaving four
+  live — worse than never finding it, because the report now says it's handled.
 - **It runs your product, not just your tests.** With an isolated browser MCP connected,
   the Tester brings the app up and works through every primary screen: **desktop 1440 and
   mobile 375**, screenshotted and eyeballed; **every clickable element actually clicked**
@@ -245,6 +254,10 @@ python scripts/recall.py "budget race condition" --root .ac-code-skill --role ba
 python scripts/redact.py --in report.md --strict
 python scripts/redact.py --explain
 
+# Findings as SARIF 2.1.0 — upload to code scanning, or gate CI
+python scripts/to_sarif.py --in report.md --out findings.sarif
+python scripts/to_sarif.py --in report.md --out findings.sarif --fail-on blocking
+
 # Server audit. This script NEVER connects anywhere; it emits read-only commands.
 python scripts/server_audit.py --script > audit.sh
 ssh host 'bash -s' < audit.sh > captured.txt
@@ -259,27 +272,38 @@ python scripts/run_scanners.py --help
 ## Layout
 
 ```
+agents/                         # 8 Claude Code agent definitions — the tool lists
+│                               #   enforce the read-only boundary, not just the prose
+├── ac-frontend · ac-backend · ac-security · ac-tester · ac-ai-engineer   (read-only)
+└── ac-docs · ac-devops · ac-fix                                         (can write)
+hooks/hooks.json.example        # optional continuous mode — .example on purpose
+tests/test_scripts.py           # 49 stdlib unittest cases over the helpers
 skills/ac-code-skill/
-├── SKILL.md                    # the coordinator: modes, phases, roster, gates
-├── references/                 # 10 briefs the agents are dispatched with
-│   ├── shared-rules.md         #   the 5 rules every agent follows
+├── SKILL.md                    # the coordinator: roster, gates, reference map (~3k tokens)
+├── references/                 # 11 briefs, loaded on demand
+│   ├── pipeline.md             #   the Step 0–6 operating manual
+│   ├── shared-rules.md         #   the 5 rules + the rationalization table
 │   ├── agent-roles.md          #   each agent's principal-level brief
 │   ├── memory.md               #   shared-memory + docs protocol, privacy gate
 │   ├── stack-detection.md      #   language-agnostic stack/command/AI detection
-│   ├── testing-harness.md      #   zero-dep testing playbook
+│   ├── testing-harness.md      #   zero-dep testing + the live browser sweep
 │   ├── design-inspiration.md   #   aesthetic direction + IP guardrails
-│   ├── report-format.md        #   agent output + merged report shape
+│   ├── report-format.md        #   report shapes, variant analysis, SARIF
 │   ├── deploy.md               #   deploy runbook, rollback, gates
 │   ├── vps-operations.md       #   owning the server: audit, harden, operate, incidents
 │   └── hooks.md                #   optional continuous mode
 ├── data/                       # 8 self-validating datasets
-│   ├── standards.csv (36)      · pii-policy.csv (18)
+│   ├── standards.csv (37)      · pii-policy.csv (18)
 │   ├── styles.csv (13)         · palettes.csv (14)      · font-pairings.csv (13)
 │   └── product-rules.csv (20)  · motion-libraries.csv (8) · component-libraries.csv (6)
-└── scripts/                    # 8 stdlib-only helpers
-    ├── design_system.py · standards.py · recall.py · redact.py
+└── scripts/                    # 9 stdlib-only helpers
+    ├── design_system.py · standards.py · recall.py · redact.py · to_sarif.py
     └── server_audit.py · md_to_docx.py · with_server.py · run_scanners.py
 ```
+
+**Calling the helpers.** They ship with the skill, not with your repo, so the agents
+call them through the resolved skill directory (`${CLAUDE_SKILL_DIR}`) rather than a
+bare relative path — the working directory during a run is your project.
 
 Runtime output lands in `.ac-code-skill/` in the target repo (git-ignored): `memory.md`,
 `docs/*.docx`, `design-system/MASTER.md` + `pages/`, and `log/<run-id>/` holding each
@@ -332,10 +356,16 @@ python build.py --check    # verify an existing bundle
 
 Stated plainly, because the skill itself forbids overclaiming:
 
-- **The helpers are unit-verified, not integration-tested together.** Each was exercised
-  against real data — 295/307 dataset checks, live font probes, the redactor against a real
-  leak, the `.docx` renderer, the server audit's read-only property — but a full pipeline
-  run with *all* of it wired together hasn't happened yet.
+- **The helpers are unit-tested, not integration-tested together.** `tests/test_scripts.py`
+  runs 49 stdlib unittest cases over all nine helpers — WCAG contrast against known ratios,
+  the redactor's BLOCK/HASH/PASS behaviour and its Luhn and dotted-quad guards, every
+  emitted server-audit command proven read-only in command position, `.docx` validity and
+  XML escaping, recall's pinning and its "nothing silently dropped" promise, and the SARIF
+  parser. But a full pipeline run with *all* of it wired together hasn't happened yet.
+
+  ```bash
+  python -m unittest discover -s tests -v
+  ```
 - **The design dataset is curated, not exhaustive** (13 styles / 14 palettes / 20 product
   types). Breadth was traded for correctness; the generator reports its own match confidence
   so a weak match is visible rather than silent.
@@ -343,9 +373,13 @@ Stated plainly, because the skill itself forbids overclaiming:
   and health data can't be regex-matched — it lists those categories every run so a human
   checks them deliberately.
 - **`server_audit.py` has not yet run against a live host.** Its read-only property is
-  verified; its triage patterns are tested against synthetic output.
-- **No test suite for the scripts themselves** — the one place this project doesn't yet
-  meet the bar its own Tester agent sets.
+  verified by test; its triage patterns are tested against synthetic output only.
+- **Tool restriction stops at `Bash`.** The read-only agents have no `Write` or `Edit`,
+  but `Bash` can still mutate a tree through redirection or `sed -i`. Their briefs forbid
+  it and nothing enforces that — running linters and test suites requires a shell.
+- **The `.skill` bundle carries only the skill.** `agents/`, `hooks/` and `tests/` are
+  Claude Code plugin components and developer files; a Desktop/Cowork upload gets the
+  skill and its prose boundaries, not the enforced tool lists.
 
 The prebuilt `.skill` is rebuilt by `build.py` (which strips bytecode and normalises paths
 so it passes the desktop validator), but it's still committed rather than produced by CI, so

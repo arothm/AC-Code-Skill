@@ -12,7 +12,7 @@ makes the authority safe enough to grant.
 ## The prime directive: audit read-only, change deliberately
 
 **Every session on a server starts read-only.** Run
-`python scripts/server_audit.py --script` and execute that; it emits *only*
+`python {skill_dir}/scripts/server_audit.py --script` and execute that; it emits *only*
 inspection commands and is the safe way to learn the machine's real state. Form a
 picture, report it, and only then propose changes.
 

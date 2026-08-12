@@ -59,7 +59,7 @@ races and corrupts. So:
   there's no race.
 - **Privacy gate before persisting — enforced, not just intended.** Run every
   delta (and the merged report, and generated docs) through
-  `python scripts/redact.py --strict` before it is written. The typed policy in
+  `python {skill_dir}/scripts/redact.py --strict` before it is written. The typed policy in
   `data/pii-policy.csv` assigns each category an action: **BLOCK** (live
   credentials, national IDs, card numbers — never persisted, `--strict` exits
   non-zero), **REDACT** (home address, phone, personal email, DOB, private names,

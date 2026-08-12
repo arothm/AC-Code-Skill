@@ -17,7 +17,7 @@ something about doing its own job better, an **Improvements** block (shared-rule
 rule 5).
 
 **Every dispatch also carries that agent's standards.** Run
-`python scripts/standards.py --agent <role> --context <web,api,ai,commercial,private>`
+`python {skill_dir}/scripts/standards.py --agent <role> --context <web,api,ai,commercial,private>`
 and include the result. `data/standards.csv` holds the fleet's non-negotiable
 rules — each owned by exactly one agent, each carrying a **`verify` column that
 says how to prove compliance rather than assert it**. They are checked on every
@@ -88,7 +88,7 @@ out, not just "this looks off").
 
 `tester` follows `references/testing-harness.md` in full; `frontend` uses its
 browser/viewport part for responsive, performance, and a11y checks; `security`
-uses `scripts/run_scanners.py`; `ai-engineer` uses it to run evals. Hand each of
+uses `{skill_dir}/scripts/run_scanners.py`; `ai-engineer` uses it to run evals. Hand each of
 them that file alongside its block.
 
 ## Dependency & dead-code ownership (no double-work)
@@ -158,7 +158,7 @@ or build step references it.
 > (same inputs → same outputs, tests still green) and never trade a handled edge
 > case or real readability for brevity. "Shorter" that drops a case is a regression.
 > **Design system generation (start here on any aesthetic ask):** run
-> `scripts/design_system.py "<the brief>"` (stdlib, no network) to compose a
+> {skill_dir}/scripts/design_system.py "<the brief>"` (stdlib, no network) to compose a
 > concrete spec from the bundled verified datasets — layout pattern + section
 > order, style with its do-not-use-for list, colour tokens as CSS variables with a
 > **measured** WCAG ratio on every pair, typography with the *correct provider
@@ -241,7 +241,7 @@ or build step references it.
 > The Cyber Security agent — a **builder-side AppSec architect**, not a
 > scanner-runner. Find and reason about flaws tools miss, and harden the SDLC.
 > Scope: {scope}. Follow `references/testing-harness.md` and use
-> `scripts/run_scanners.py` (runs only installed scanners; if none, say so and do
+> `{skill_dir}/scripts/run_scanners.py` (runs only installed scanners; if none, say so and do
 > manual review — never fabricate a clean result). Save output to
 > `.ac-code-skill/log/<run-id>/`.
 >
@@ -294,7 +294,7 @@ or build step references it.
 >
 > **Run first, verify by running:** execute the project's own unit, integration,
 > and e2e suites (both layers), the type-checker, and the production build. Bring
-> services up via `scripts/with_server.py` (start command + readiness URL from
+> services up via `{skill_dir}/scripts/with_server.py` (start command + readiness URL from
 > memory); drive browser e2e through the Playwright/browser MCP with
 > reconnaissance-then-action, and say so plainly if no browser MCP is available
 > rather than fabricating flow results. Never infer pass/fail from the code. For
@@ -389,7 +389,7 @@ or build step references it.
 > **Server operations (when a host is in scope).** You have full authority over
 > the VPS for reversible routine operations, under one discipline: **audit
 > read-only first, change deliberately.** Start with
-> `python scripts/server_audit.py --script`, run it over SSH, capture output to
+> `python {skill_dir}/scripts/server_audit.py --script`, run it over SSH, capture output to
 > `.ac-code-skill/log/<run-id>/server/`, and triage with `--parse`. The audit
 > surface is identity & access (sshd config, keys, sudoers), network exposure
 > (listening sockets, firewall, fail2ban), patch posture (pending updates,
@@ -450,7 +450,7 @@ or build step references it.
 > traceable to code, and consistent across the set. **Deliverables are Microsoft
 > Word (`.docx`) files in `.ac-code-skill/docs/`** — not markdown. Author each doc
 > in markdown, then render it to `.docx` with the bundled stdlib helper
-> `scripts/md_to_docx.py` (`--in <doc>.md --out .ac-code-skill/docs/<doc>.docx`, or
+> `{skill_dir}/scripts/md_to_docx.py` (`--in <doc>.md --out .ac-code-skill/docs/<doc>.docx`, or
 > `--in-dir <staging> --out-dir .ac-code-skill/docs` to batch — run `--help`, use
 > as a black box; it uses `pandoc` if present, else a zero-dependency built-in
 > writer). Stage the markdown sources under `.ac-code-skill/log/<run-id>/docs-src/`

@@ -15,6 +15,16 @@
       "strict": false,
       "skills": [
         "./skills/ac-code-skill"
+      ],
+      "agents": [
+        "./agents/ac-frontend.md",
+        "./agents/ac-backend.md",
+        "./agents/ac-security.md",
+        "./agents/ac-tester.md",
+        "./agents/ac-ai-engineer.md",
+        "./agents/ac-docs.md",
+        "./agents/ac-devops.md",
+        "./agents/ac-fix.md"
       ]
     }
   ]

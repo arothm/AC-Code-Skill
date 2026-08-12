@@ -116,6 +116,55 @@ rough ROI (impact ÷ effort). Advisory — implementing one is approval-gated._
 - Generated/updated as Word `.docx` at `.ac-code-skill/docs/`: <which docs>.
 ```
 
+## Variant analysis — run it before you write the report
+
+A verified defect is a **pattern**, and patterns repeat. Between confirming a
+finding and writing it up, sweep the codebase for the same shape.
+
+1. **Abstract the defect into a searchable construct.** Not "`total` is unchecked on
+   line 42" but "a numeric parse whose `NaN` case is unhandled". Not "this route
+   skips `requireAuth`" but "a router registration without an auth middleware".
+2. **Grep the construct, across the whole tree** — not just the diff. Variants
+   outside the scope still get reported (as `warning` at minimum): the user needs to
+   know the fix is incomplete, even if this run won't touch them.
+3. **Confirm each hit** the same way you confirmed the first. A grep hit is a
+   candidate, not a finding.
+4. **Report them together.** One entry, one root cause, every `file:line` listed:
+
+   ```
+   - **Unhandled NaN from user-supplied quantity** — 4 occurrences
+     `cart/total.ts:42` · `checkout/summary.ts:88` · `api/order.ts:31` · `admin/bulk.ts:117`
+     (from: backend, confirmed by: security · variant sweep: `parseInt(` + no `isNaN`)
+     <problem>. **Fix:** <one fix that covers all four>.
+   ```
+
+5. **Record the sweep even when it finds nothing.** "Variant sweep: `parseInt(`
+   across `src/` — this is the only unguarded occurrence" tells the reader the
+   question was asked. Silence reads as *not checked*.
+
+Why this is not optional: a fix applied to 1 of 5 occurrences closes the finding in
+the report while leaving four live in the code. That is **worse than never having
+found it**, because the report now certifies the problem as handled. When a variant
+sweep is impractical (no grep-able construct, generated code), say so explicitly
+instead of skipping it silently.
+
+## Machine-readable output (SARIF) — optional, for CI
+
+`scripts/to_sarif.py` converts the merged report's findings into SARIF 2.1.0 so they
+can be uploaded to GitHub code scanning or gate a CI job:
+
+```bash
+python "{skill_dir}/scripts/to_sarif.py" --in .ac-code-skill/log/<run-id>/report.md \
+    --out .ac-code-skill/log/<run-id>/findings.sarif
+python "{skill_dir}/scripts/to_sarif.py" --in report.md --out findings.sarif --fail-on blocking
+```
+
+It parses the `- [severity] path:line — problem. Fix: …` finding lines (the shape
+this file specifies), maps `blocking → error`, `warning → warning`, `nit → note`, and
+`--fail-on` exits non-zero when a finding at or above that severity is present. The
+markdown report stays the human deliverable; SARIF is an additional artefact, never a
+replacement.
+
 ## The fix-verification report (Step 5, after the fixes land)
 
 Each agent re-reviews **its own** fixes and returns a verdict per finding; you merge
@@ -168,7 +217,7 @@ lists the agents that saw it; keep `file:line` + a concrete fix on every line.
 The point of the fleet is one coherent report, not a pile of per-agent outputs.
 
 **Run the report through the privacy gate before saving it.** `python
-scripts/redact.py --in report.md --strict` — a review artefact is a durable file
+{skill_dir}/scripts/redact.py --in report.md --strict` — a review artefact is a durable file
 that gets shared, and it is exactly where a leaked credential or a real person's
 address should not end up (see `memory.md`). Keep `file:line` paths and public
 URLs; they're PASS-classed so findings stay reproducible.

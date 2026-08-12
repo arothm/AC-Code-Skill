@@ -28,7 +28,7 @@ exist.
 
 The skill installs nothing. Two consequences:
 
-- **Server lifecycle** uses the bundled `scripts/with_server.py` (Python
+- **Server lifecycle** uses the bundled `{skill_dir}/scripts/with_server.py` (Python
   standard library only). It starts one or more servers, waits for their ports,
   runs your command, and tears them down. Run it with `--help`, then invoke it
   as a **black box** — do not read its source into your context (that wastes
@@ -92,7 +92,7 @@ Is the target static HTML?
   ├─ Yes → read the HTML file directly to get selectors
   │         └─ if that's incomplete, treat it as dynamic (below)
   └─ No (dynamic) → is the server already running?
-       ├─ No  → use scripts/with_server.py to start it, then reconnoiter
+       ├─ No  → use {skill_dir}/scripts/with_server.py to start it, then reconnoiter
        └─ Yes → navigate → wait for network idle → screenshot/inspect → act
 ```
 
@@ -102,7 +102,7 @@ The suite proves the code the team thought to test. Running the app proves the
 product. **`tester` does both**, and this sweep is not optional when there is a UI
 and an isolated browser MCP to drive it with.
 
-Bring the app up with `scripts/with_server.py`, then work through this list per
+Bring the app up with `{skill_dir}/scripts/with_server.py`, then work through this list per
 primary screen. Screens come from memory's *Testing harness* section if recorded,
 otherwise from the router/route table (read it — don't guess the URLs).
 
@@ -159,7 +159,7 @@ open. For each run, save into `.ac-code-skill/log/<run-id>/` (git-ignored):
 - **Screenshots** at the relevant states (and, for the designer, one per
   breakpoint).
 - **Console logs** and any Playwright/e2e **traces** the runner produces.
-- **Scanner output** (from `scripts/run_scanners.py`) for the security agent.
+- **Scanner output** (from `{skill_dir}/scripts/run_scanners.py`) for the security agent.
 
 Reference the artifact path in the finding, e.g. `Fix: … (see
 .ac-code-skill/log/<run-id>/checkout-500.png)`. A finding with an artifact is verified;
@@ -183,7 +183,7 @@ none.
 
 ## Security-specific: the scanner runner
 
-`security` uses `scripts/run_scanners.py` (stdlib only, installs nothing).
+`security` uses `{skill_dir}/scripts/run_scanners.py` (stdlib only, installs nothing).
 It detects which scanners are already on PATH (`npm audit`, `pip-audit`,
 `cargo audit`, `osv-scanner`, `semgrep`, `bandit`, `gitleaks`, `trufflehog`),
 runs the ones that fit the repo, and prints a normalized summary to triage.
