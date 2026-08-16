@@ -1,0 +1,19 @@
+# Normalize line endings so an editor switching CRLF/LF never shows up as a
+# whole-file diff. Text files are stored LF in the repo and checked out with the
+# platform's native endings.
+* text=auto
+
+# Explicit for the file types this repo is made of, so `text=auto` guessing is
+# never the deciding factor.
+*.md    text
+*.py    text diff=python
+*.json  text
+*.csv   text
+*.yml   text
+*.yaml  text
+*.toml  text
+*.txt   text
+LICENSE text
+
+# The packaged skill is a zip. Never touch its bytes.
+*.skill binary
