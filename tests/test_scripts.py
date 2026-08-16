@@ -196,6 +196,27 @@ class TestStandards(unittest.TestCase):
         # frontend-owned rules must not leak into a devops brief
         self.assertNotIn("skeleton-loaders", out)
 
+    def test_compact_is_one_line_per_rule_and_much_smaller(self):
+        code, full, _ = run(standards.main, ["--agent", "backend"])
+        code2, small, _ = run(standards.main, ["--agent", "backend", "--compact"])
+        self.assertEqual((code, code2), (0, 0))
+        rules = [r for r in standards.load("standards")
+                 if r["owner"] in ("backend", "all")]
+        body = [l for l in small.splitlines() if l.strip() and not l.startswith(("B=", str(len(rules))))]
+        # every rule present, one line each, and the verbose columns dropped
+        for r in rules:
+            self.assertIn(r["id"], small, r["id"])
+        self.assertNotIn("VERIFY", small)
+        self.assertLess(len(small.split()), len(full.split()) / 2)
+
+    def test_why_returns_one_rule_in_full_and_rejects_unknown_ids(self):
+        code, out, _ = run(standards.main, ["--why", "rate-limiting"])
+        self.assertEqual(code, 0)
+        self.assertIn("VERIFY", out)
+        self.assertNotIn("no-n-plus-1", out)  # exactly one rule, not the agent's set
+        code, out, _ = run(standards.main, ["--why", "not-a-real-rule"])
+        self.assertEqual(code, 1)  # non-zero so a typo in a dispatch is caught
+
     def test_routing_names_a_plausible_owner(self):
         code, out, _ = run(standards.main, ["--who", "TLS certificates and HTTP/3 at the edge"])
         self.assertEqual(code, 0)

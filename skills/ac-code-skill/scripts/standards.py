@@ -7,7 +7,9 @@ Two jobs:
 1. **Standards.** `data/standards.csv` holds the rules every run must respect,
    each owned by exactly one agent, with a severity and — crucially — a `verify`
    column saying how to *prove* compliance rather than assert it. An agent pulls
-   only its own standards at dispatch, so briefs stay small.
+   only its own standards at dispatch, so briefs stay small — `--compact` trims
+   that to one line per rule, with `--why <id>` for the rationale of the ones it
+   actually reports against.
 
 2. **Routing.** `--who "<need>"` answers "which agent covers this?" by matching
    the need against agent ownership and the standards they own. Useful when the
@@ -15,6 +17,8 @@ Two jobs:
 
 USAGE
     python standards.py --agent frontend            # that agent's standards
+    python standards.py --agent frontend --compact  # one line per rule (dispatch form)
+    python standards.py --why rate-limiting         # why + how to verify one rule
     python standards.py --agent devops --checklist  # as a report checklist
     python standards.py --context commercial,ai     # standards gated on context
     python standards.py --severity blocking
@@ -37,7 +41,6 @@ AGENTS = {
     "security": "logic flaws, crypto, secrets, supply chain, authz, PII and privacy compliance",
     "tester": "all testing, suite strategy, flakiness, contract/perf/chaos, coverage, test authoring",
     "devops": "delivery pipeline, infrastructure, TLS/edge, observability, deploys and rollback, dependency upgrades",
-    "docs": "PRD/BRD/FDD/TDD/ADR documentation kept traceable to the code",
     "ai-engineer": "prompts, agent/RAG architecture, evals, model choice, token cost and guardrails",
 }
 SEVERITIES = {"blocking", "warning", "nit"}
@@ -79,9 +82,19 @@ def applicable(row, contexts):
     return a == "any" or not contexts or a in contexts
 
 
-def show(rows, checklist=False):
+def show(rows, checklist=False, compact=False):
     if not rows:
         print("(no standards match)")
+        return
+    if compact:
+        # One line per rule: enough to check against, ~a third of the tokens of
+        # the full form. The WHY and VERIFY columns are a `--why <id>` away, so
+        # an agent pays for them only on the rules it actually reports against.
+        width = max(len(r["id"]) for r in rows)
+        for r in rows:
+            print(f"{r['severity'][0].upper()} {r['id']:<{width}}  {r['rule']}")
+        print(f"\n{len(rows)} rules (B=blocking W=warning N=nit). "
+              f"Why/how-to-verify for one: --why <id>")
         return
     if checklist:
         for r in rows:
@@ -106,7 +119,7 @@ def route(need, standards):
     ranked = sorted(scores.items(), key=lambda kv: -kv[1])
     top = ranked[0][1] if ranked else 0.0
     # Only surface agents that are genuinely in contention. Everything owns the
-    # shared 'code-comments' rule, so an unfiltered list names all seven and is
+    # shared 'code-comments' rule, so an unfiltered list names every agent and is
     # useless as routing.
     cutoff = max(top * 0.25, 0.5)
     print(f"Need: {need!r}\n")
@@ -131,7 +144,7 @@ def validate(standards, libs):
     for r in standards:
         checks += 3
         if r["owner"] not in AGENTS and r["owner"] != "all":
-            failures.append(f"OWNER    {r['id']}: '{r['owner']}' is not one of the seven agents (or 'all')")
+            failures.append(f"OWNER    {r['id']}: '{r['owner']}' is not a fleet agent (or 'all')")
         if r["severity"] not in SEVERITIES:
             failures.append(f"SEVERITY {r['id']}: '{r['severity']}' not in {sorted(SEVERITIES)}")
         if not r["verify"].strip():
@@ -160,6 +173,8 @@ def main(argv=None):
     ap.add_argument("--severity", choices=sorted(SEVERITIES), help="filter by severity")
     ap.add_argument("--context", help="comma list: web,api,ai,commercial,private — gates context-specific rules")
     ap.add_argument("--checklist", action="store_true", help="emit as a markdown checklist")
+    ap.add_argument("--compact", action="store_true", help="one line per rule (the dispatch form — ~3x cheaper)")
+    ap.add_argument("--why", metavar="ID", help="full rationale + verification for one rule id")
     ap.add_argument("--who", help="which agent covers this need?")
     ap.add_argument("--libraries", action="store_true", help="list the vetted component libraries")
     ap.add_argument("--validate", action="store_true", help="dataset integrity gate")
@@ -178,6 +193,14 @@ def main(argv=None):
     if a.who:
         route(a.who, standards)
         return 0
+    if a.why:
+        hit = [r for r in standards if r["id"] == a.why]
+        if not hit:
+            print(f"no standard with id {a.why!r}. Known ids: "
+                  + ", ".join(sorted(r["id"] for r in standards)))
+            return 1
+        show(hit)
+        return 0
 
     contexts = [c.strip() for c in (a.context or "").split(",") if c.strip()]
     rows = [r for r in standards
@@ -186,7 +209,7 @@ def main(argv=None):
             and (not a.severity or r["severity"] == a.severity)
             and applicable(r, contexts)]
     rows.sort(key=lambda r: (["blocking", "warning", "nit"].index(r["severity"]), r["id"]))
-    show(rows, a.checklist)
+    show(rows, a.checklist, a.compact)
     return 0
 
 

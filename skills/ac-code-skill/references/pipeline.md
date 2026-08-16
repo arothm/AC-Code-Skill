@@ -1,17 +1,18 @@
 # The pipeline — Steps 0 through 6
 
-The operating manual for a run. `SKILL.md` indexes these phases; this file is what
-you actually follow. Every `{skill_dir}` below is the resolved absolute path to the
+The operating manual for a **review-driven run** — the fleet finds the work. When
+the *user* brings the work list instead ("fix these, add those"), follow
+`references/build-mode.md` and come back here for Step 6 when it's time to ship.
+`SKILL.md` indexes both; this file is what you actually follow for a review run. Every `{skill_dir}` below is the resolved absolute path to the
 skill directory (see `SKILL.md` §Resolve the skill directory first) — substitute the
 real value before you run a command or send a dispatch.
 
 ---
 
-## Step 0 — Memory & docs
+## Step 0 — Memory
 
-Check for `.ac-code-skill/memory.md`. If it exists, read it and the contents of
-`.ac-code-skill/docs/` — together they are the project briefing every agent
-inherits. If not, create `.ac-code-skill/` (git-ignored — add it to `.gitignore` if
+Check for `.ac-code-skill/memory.md`. If it exists, read it — it is the project
+briefing every agent inherits. If not, create `.ac-code-skill/` (git-ignored — add it to `.gitignore` if
 absent) and seed `memory.md` after Step 1's detection pass.
 
 `references/memory.md` has the layout, the single-writer rule, the *Agent
@@ -44,13 +45,12 @@ features into memory, so no later agent re-derives them.
   see the `devops` brief.
 
 Record both in *Project preferences* and honour them thereafter without re-asking.
-**Which docs the user wants is asked in Step 4**, not here.
 
 ---
 
 ## Step 2 — Select the agents and confirm
 
-Match agents to the repo and the request. Launching all seven when three are
+Match agents to the repo and the request. Launching all six when three are
 relevant burns tokens for no gain (rule 2). State your selection in a line or two
 and let the user add or drop before you launch. A one-prompt full run auto-selects
 every agent the stack supports.
@@ -59,36 +59,56 @@ every agent the stack supports.
 
 ## Step 3 — Review phase (parallel, read-only)
 
+**Snapshot the tree first.** Run `git status --porcelain` and keep the output.
+The review agents hold `Write`/`Edit` for the fix phase, so read-only here is
+enforced by *verification*, not by an empty tool list: diff the snapshot against
+`git status --porcelain` when the phase ends. Any file changed during review is a
+hard failure — name the agent, report it, and re-run that agent's review against
+the restored state before trusting its findings. Outside a git repo, say that the
+check is unavailable and treat the phase as unverified.
+
 Launch every selected review agent **in a single turn** so they run concurrently —
 this is the point of the fleet. Prefer the shipped agent definitions
-(`ac-frontend`, `ac-backend`, `ac-security`, `ac-tester`, `ac-ai-engineer`), whose
-tool lists enforce read-only by construction; fall back to a general-purpose
-subagent with the rule stated in the prompt.
+(`ac-frontend`, `ac-backend`, `ac-security`, `ac-tester`, `ac-ai-engineer`); fall
+back to a general-purpose subagent with the phase rules stated in the prompt.
 
 **Each agent reviews only the surface it owns.** Overlapping territory is what
 makes a fleet cost more than one agent and find less.
 
-### Assembling a dispatch
+### Assembling a dispatch — send what varies, nothing else
 
-Every dispatch is:
+**The shipped agent definitions already carry the five rules, the principal-caliber
+lens, the role brief, the phase discipline and the output caps.** Re-sending them
+is the most expensive mistake available here: identical text, authored into your
+context, then copied into six dispatches, paid for twice over. Don't.
 
-1. `references/shared-rules.md` — the five rules, verbatim
-2. the agent's block from `references/agent-roles.md`
-3. its standards: `python "{skill_dir}/scripts/standards.py" --agent <role> --context <ctx>`
-4. the detected `{scope}` and `{commands}`
-5. the resolved `{skill_dir}`
-6. this opening instruction:
+A dispatch is five short things:
+
+1. **the task** — what this agent is reviewing or building, in a sentence or two
+2. the detected **`{scope}`** and **`{commands}`** (real ones, from Step 1)
+3. the resolved **`{skill_dir}`** — substituted, never the literal placeholder
+4. the opening instruction:
    `python "{skill_dir}/scripts/recall.py" "<the agent's task>" --root .ac-code-skill --role <role>`
-7. `references/testing-harness.md` for any agent that runs tests, a browser, or
-   scanners — `tester` in full, `frontend` for the browser/viewport part, `security`
-   for the scanner part, `ai-engineer` for evals
+5. the **context** for its standards (`private|commercial`, `web,api,ai`) — the
+   agent runs `standards.py --agent <role> --compact --context <ctx>` itself
+
+Anything deeper — the long-form rules, the report template, the testing-harness
+protocol, the rationale behind a standard — the agent **reads for itself** from
+`{skill_dir}/references/`, which costs one agent's context instead of yours plus
+theirs. Point at the file; never paste it.
+
+**On a host without the shipped agent definitions** (a plain general-purpose
+subagent), the brief isn't preloaded, so fall back to the old assembly:
+`shared-rules.md` + the role's block from `agent-roles.md` + `report-format.md`'s
+output caps + the phase rules, followed by the five items above.
 
 ### `tester` runs the product, not just its suite
 
 On any repo with a runnable UI, `tester` brings the app up
-(`python "{skill_dir}/scripts/with_server.py" --help`) and drives it through an
-**isolated browser MCP** — in-app/sandboxed first, Playwright second, *never* the
-user's real logged-in Chrome unless they ask this run. Per primary screen:
+(`python "{skill_dir}/scripts/with_server.py" --help`) and drives it through the
+**isolated in-app browser** — the `mcp__Claude_Browser__*` tools, which `ac-tester`
+and `ac-frontend` carry in their tool lists. *Never* the user's real or paired
+Chrome (`mcp__claude-in-chrome__*`). Per primary screen:
 
 - **Both viewports** — render and screenshot at **desktop 1440×900** and **mobile
   375×812**; judge the rendering, not just the DOM.
@@ -102,7 +122,7 @@ user's real logged-in Chrome unless they ask this run. Per primary screen:
   request/response log to `.ac-code-skill/log/<run-id>/screens/`; every claim cites
   its artefact.
 
-No isolated browser MCP available → say so, fall back to the project's own e2e
+No browser tools available in this host → say so, fall back to the project's own e2e
 suite, and label everything visual or flow-based **"unverified (no browser)"**. The
 missing browser is itself a finding. Full protocol: `testing-harness.md` §Policy 3b.
 
@@ -127,8 +147,7 @@ and a concrete fix on every line.
   A bug is rarely alone; see `report-format.md` §Variant analysis.
 - Run the merged report through
   `python "{skill_dir}/scripts/redact.py" --in report.md --strict` and save it to
-  `.ac-code-skill/log/<run-id>/report.md` — but **hold the chat copy until Step 4**
-  delivers both together.
+  `.ac-code-skill/log/<run-id>/report.md`; Step 4 delivers it to the user.
 - Optionally emit machine-readable findings for CI:
   `python "{skill_dir}/scripts/to_sarif.py" --in report.md --out findings.sarif`.
 - Consolidate Memory deltas into `memory.md` through the same privacy gate, and file
@@ -142,29 +161,18 @@ by impact ÷ effort, deduped against the memory *Enhancement backlog*, and kept 
 of the defect counts. On a **quick diff-check**, tell agents to skip enhancements and
 omit the section — there the user wants defects only, not a roadmap.
 
-**Do not hand the report to the user yet.**
-
 ---
 
-## Step 4 — Ask which docs, generate them, then deliver the report
+## Step 4 — Deliver the report
 
-**Ask first.** Present the menu — **PRD** (product requirements), **BRD** (business
-requirements), **FDD** (functional design), **TDD** (technical design), **ADRs**
-(decision records) — one line each, and ask which the user wants. Record it in
-*Project preferences* as `docs-types`. On every later run generate exactly that set
-without re-asking; the user can change it any time, and "none" is a valid answer
-that skips the phase. Ask here because the review has just established what the
-project actually is.
+**Both places, in full.** Saved at `.ac-code-skill/log/<run-id>/report.md` **and**
+rendered whole into the chat — not a summary behind a file link. For a large
+report, lead the chat copy with the verdict and severity counts so the top stays
+skimmable, then the full grouped findings below.
 
-**Then generate.** Dispatch `docs` to build or refresh the chosen set into
-`.ac-code-skill/docs/` from memory + the merged report + the code, verified against
-the source rather than invented. Deliverables are **Word `.docx`** via
-`python "{skill_dir}/scripts/md_to_docx.py" --in-dir <staging> --out-dir .ac-code-skill/docs`,
-with markdown sources staged under `log/<run-id>/docs-src/`.
-
-**Then deliver the report — both places, in full.** Saved at
-`.ac-code-skill/log/<run-id>/report.md` **and** rendered whole into the chat (not a
-summary behind a file link), pointing at the refreshed `.docx` docs at the end.
+Close with the **fix batches** the user can approve (see Step 5), and the result of
+the review-phase write check from Step 3 — "no files changed during review" is a
+line worth printing, because its absence is a failure.
 
 ---
 
@@ -178,9 +186,24 @@ one yes/no. Safe mechanical fixes first; behavioural changes (logic, test
 expectations, security semantics, dependency removals/upgrades) need explicit
 per-item confirmation.
 
-Apply through the `ac-fix` agent (or yourself) **sequentially** — writes must be
-ordered. Never touch anything the user didn't approve. Coverage gaps and AI/LLM
-fixes are write actions too, and are gated the same way.
+**Each agent fixes its own findings.** Re-dispatch the owning agent with the exact
+list of findings the user approved for it — `frontend` fixes the frontend
+findings, `backend` the backend ones, `tester` authors the missing tests,
+`ai-engineer` the AI/LLM changes, `security` its own (per-item confirmed, never
+batched blind). The agent that raised the finding already holds the file, the
+repro and the reasoning, so its fix is better and cheaper than a generic applier
+re-deriving all three.
+
+**One agent at a time.** This phase is sequential — never the parallel fan-out
+Step 3 uses. Two agents editing a shared tree corrupt it, and no ordering
+guarantee survives concurrency. Within an agent, one finding at a time, smallest
+change that resolves it, nothing unapproved however obvious. Coverage gaps and
+AI/LLM fixes are write actions too, and are gated the same way.
+
+**The verdict is yours, not theirs.** After each agent finishes, *you* re-run the
+relevant test, lint or scanner command and report that output. An agent grading
+its own fix is the blind spot this design introduces; objective command output is
+what closes it.
 
 ### Then every owning agent re-reviews its own fixes
 
@@ -203,9 +226,6 @@ deploy with a failed verdict outstanding.**
 Report the verdict table (`report-format.md` §fix-verification), then consolidate it
 into memory — a finding confirmed `fixed` is no longer "present", so reconcile its
 status everywhere it appears.
-
-**Once the re-review passes**, regenerate the docs (same chosen set) so they reflect
-the fixed, verified code. Tell the user which docs changed.
 
 ---
 
@@ -247,7 +267,7 @@ rollback is warranted and let the user decide).
 Three guards, because a pipeline that re-runs itself must terminate:
 
 1. **Exactly once per deploy.** Its own output never triggers another pass.
-2. **Read-only.** No fixes, no docs regeneration, no second deploy. New findings are
+2. **Read-only.** No fixes, no second deploy. New findings are
    reported; fixing them means the user starting a fresh cycle.
 3. **Skipped when there is nothing to verify against** — no reachable deployed
    environment, or a deploy that rolled back (report the rollback instead).
@@ -265,9 +285,7 @@ front and get the first build right: what and for whom, scope vs. non-goals,
 frontend/backend shape, data model, auth & compliance, testing bar, deploy target.
 Record the answers in memory's *Requirements & product*. Then:
 
-1. Generate the initial docs (PRD/BRD/FDD/TDD, seed ADRs) into
-   `.ac-code-skill/docs/` from the interview.
-2. Propose a concrete stack + scaffold plan and confirm it. On an **aesthetic**
+1. Propose a concrete stack + scaffold plan and confirm it. On an **aesthetic**
    brief ("premium minimal", "editorial", "make it feel expensive"), `frontend` runs
    `python "{skill_dir}/scripts/design_system.py" "<brief>" --persist -o .ac-code-skill`
    to compose a verified design system — pattern, style, colour tokens with
@@ -276,7 +294,7 @@ Record the answers in memory's *Requirements & product*. Then:
    overrides inheriting from it. Then apply `references/design-inspiration.md` for
    taste calibration, implemented originally in the project's own tokens and stack
    (learn principles, never clone). Record the direction in memory.
-3. On approval, scaffold the project (structure, tooling, CI, a running skeleton)
+2. On approval, scaffold the project (structure, tooling, CI, a running skeleton)
    and seed `memory.md` with the chosen stack and commands.
 
 From there the normal pipeline applies as the code grows.

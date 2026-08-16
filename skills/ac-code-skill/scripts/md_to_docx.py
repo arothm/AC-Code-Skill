@@ -6,7 +6,7 @@ emits: headings, paragraphs, **bold**/*italic*/`code`, bullet + numbered lists,
 pipe tables, blockquotes, `---` rules, and fenced code blocks.
 
 Black-box helper: run with --help, then invoke. Don't read this source unless a
-customized conversion is truly needed. It exists so the `docs` agent ships Word
+customized conversion is truly needed. It exists so the fleet can ship Word
 documents (not .md) with zero dependencies, consistently, without hand-rolling
 OOXML each time.
 

@@ -15,7 +15,6 @@ run if it isn't there).
 ```
 .ac-code-skill/
 ├── memory.md            # the consolidated, always-current project knowledge base
-├── docs/                # generated formal docs as Word .docx (the types the user chose) — refreshed each run
 ├── design-system/       # generated design system (only when UI work happens)
 │   ├── MASTER.md        #   global design rules: tokens, type, pattern, anti-patterns
 │   └── pages/<name>.md  #   per-page overrides; inherit everything not restated
@@ -24,15 +23,12 @@ run if it isn't there).
         ├── <agent>.md               # each agent's raw report for this run
         ├── screens/                 # viewport screenshots, console + network captures
         ├── server/                  # raw server-audit output (devops)
-        ├── docs-src/                # markdown sources the docs agent rendered to .docx
         ├── report.md                # the merged review report
         ├── fix-verification.md      # per-finding fixed / not fixed / regressed verdicts
         └── post-deploy-report.md    # the single post-deploy verification pass
 ```
 
-`memory.md` is the durable brain. `docs/` is the living, human-readable design
-(regenerated after review and again after fixes — see cadence). `log/` is the
-per-run history (useful for diffing runs and debugging, safe to prune).
+`memory.md` is the durable brain. `log/` is the per-run history (useful for diffing runs and debugging, safe to prune).
 
 **Run-id naming.** Use `<date>-<kind><n>` so the log tells you what the run *was*
 — `20260705-review2` for a review pass, `20260705-cycle1` for a full
@@ -49,16 +45,15 @@ read the stale one.
 Agents run in parallel. If several append to `memory.md` at once, the file
 races and corrupts. So:
 
-- **Agents read `memory.md` and `docs/`** at the start of their run (read-only).
-- **Agents never write `memory.md` or the docs.** They end their report with a
+- **Agents read `memory.md`** at the start of their run (read-only).
+- **Agents never write `memory.md`.** They end their report with a
   **Memory delta** — a short list of durable facts worth keeping, plus any
   **Improvements** to their own playbook.
 - **The coordinator is the sole writer.** After each phase it collects the
   deltas, deduplicates them against what's already there, and writes the updated
-  `memory.md` (and regenerates `docs/`). Because only one process writes,
-  there's no race.
+  `memory.md`. Because only one process writes, there's no race.
 - **Privacy gate before persisting — enforced, not just intended.** Run every
-  delta (and the merged report, and generated docs) through
+  delta (and the merged report) through
   `python {skill_dir}/scripts/redact.py --strict` before it is written. The typed policy in
   `data/pii-policy.csv` assigns each category an action: **BLOCK** (live
   credentials, national IDs, card numbers — never persisted, `--strict` exits
@@ -78,18 +73,16 @@ races and corrupts. So:
 
 Update memory **after every phase**, not just at the end — so agents in a later
 phase (e.g. e2e after unit tests, or deploy after review) read the freshest
-state. Concretely, the coordinator writes memory and regenerates docs: after the
-review phase, after applying fixes, after docs, and after deploy. Frequent small
-consolidations keep memory current without ever risking a concurrent write.
+state. Concretely, the coordinator writes memory after the review phase, after
+applying fixes, and after deploy. Frequent small consolidations keep memory
+current without ever risking a concurrent write.
 
-- **After review:** consolidate deltas → `memory.md`, then ask which docs the user
-  wants, generate them from the merged report + memory, then hand the user the
-  report.
+- **After review:** consolidate deltas → `memory.md`, open every confirmed finding
+  in the *Findings & fix ledger* as `[open]`, then hand the user the report.
 - **After approved fixes and their re-review:** consolidate the fix outcomes *and
-  the per-finding verdicts* (`fixed` / `not fixed` / `regressed`) → `memory.md`,
-  then **regenerate `docs/`** so the documentation reflects the fixed, verified
-  code rather than the pre-fix code. A finding confirmed `fixed` stops being
-  "present" — reconcile its status everywhere it appears.
+  the per-finding verdicts* (`fixed` / `not fixed` / `regressed`) → `memory.md`.
+  A finding confirmed `fixed` stops being "present" — move it to `[fixed]` in the
+  ledger and reconcile its status everywhere else it appears.
 - **After deploy and its verification pass:** consolidate the *Infra & deploy*
   delta and the post-deploy verdict. The tree is no longer "not yet deployed";
   say what shipped and what the verification found.
@@ -143,7 +136,6 @@ _Last updated: <date> by coordinator (run <run-id>)_
 
 ## Project preferences (asked once, then honoured — the user can change them)
 - context: <private | commercial>  (drives noindex vs privacy-policy standards)
-- docs-types: <e.g. PRD, TDD, ADR — the set the user chose; generate only these>
 - devops-consent: <yes | no | unasked>  (no ⇒ never dispatch devops for server work)
 
 ## Stack & commands (verified)
@@ -179,13 +171,24 @@ _Last updated: <date> by coordinator (run <run-id>)_
 - Host/OS, deploy method, health-check URL, rollback method (locations, not secrets).
 - Server-maintenance state: pending patches, cert expiry, reboot-required.
 
-## Requirements & product (for greenfield / docs)
+## Requirements & product (for greenfield)
 - Goals, target users, must-have scope, non-goals, constraints from the intake interview.
 
 ## Agent learnings (self-improvement — filed per agent)
 - frontend: <refinement discovered on a prior run>
 - tester: <...>
 - (one bullet per learning, owned by the agent that found it)
+
+## Findings & fix ledger (what was found, what was done about it — carried across runs)
+- [open]      [blocking] <file:line> — <finding>. (from: <agent>, run <id>)
+- [fixed]     [warning]  <file:line> — <finding>. Fix: <what changed>. Verified by: `<command>` → <result>. (run <id>)
+- [wontfix]   <finding> — user declined; reason: <why>. Don't re-raise it as new.
+- [regressed] <finding> — the fix broke <what>; see run <id>.
+
+Every confirmed finding enters here at review and is updated when its verdict
+lands. This is what stops the next run re-reporting a bug the user already fixed
+or already declined, and what lets you answer "what has this fleet actually
+changed in my repo?" without re-reading every log.
 
 ## Enhancement backlog (forward-looking recommendations — carried across runs)
 - [proposed] [impact:H effort:S] <area> — <enhancement>. Why: <benefit>. (from: <agent>, run <id>)

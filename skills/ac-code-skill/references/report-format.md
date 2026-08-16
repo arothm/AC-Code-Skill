@@ -33,6 +33,36 @@ Improvements:
   shared-rules.md rule 5. The coordinator files these under Agent learnings.>
 ```
 
+## The output contract — caps every agent honours
+
+Everything an agent returns is paid for a second time in the coordinator's
+context, so the return shape is capped. State these caps in every dispatch; the
+shipped agent definitions carry them too.
+
+| Block | Cap |
+|---|---|
+| Summary | ≤ 60 words |
+| Findings | **every** `blocking`, then ≤ 6 `warning`, ≤ 4 `nit`, ranked by impact |
+| Per finding | ≤ 25 words after the `file:line` — the problem and the fix |
+| Enhancements | ≤ 3 |
+| Memory delta | ≤ 5 bullets |
+| Improvements | ≤ 2 |
+
+- **Truncation is declared, never silent.** A trimmed list ends with
+  `+N warnings, +M nits omitted (lower impact)`.
+- **No code blocks, no pasted file contents, no diffs, no full logs.** A
+  `file:line` is a pointer the coordinator can follow for free; a pasted function
+  is paid for by every later turn in the run. The only exception is command
+  output that *is* the evidence, trimmed to the lines that carry it — suite
+  results as `142 passed, 3 failed` plus the failing names, scanner results as
+  counts by severity plus the hits the agent verified by hand.
+- **Never a secret's value**, even truncated — cite `file:line` and its class.
+
+**Caps bound what an agent reports, never what it checks.** Dropping a blocking
+finding to fit is a failure of the run; padding a thin review to fill the cap is
+the waste the cap exists to prevent. Both are worth calling out when you see them
+in a returned report.
+
 **Findings vs Enhancements** are two different things: a *finding* is a defect
 (something is wrong, severity-graded), an *enhancement* is a forward-looking
 improvement (nothing is wrong, but here's a better way) — capped at 3 per agent,
@@ -111,9 +141,6 @@ rough ROI (impact ÷ effort). Advisory — implementing one is approval-gated._
 - **[impact:H · effort:S]** <area> — <enhancement>. Why: <concrete benefit>. (from: <agent>)
 - **[impact:M · effort:M]** <area> — <enhancement>. Why: <concrete benefit>. (from: <agent>)
 - <omit this whole section on a quick diff-check; include it on a full run / cycle>
-
-## Docs
-- Generated/updated as Word `.docx` at `.ac-code-skill/docs/`: <which docs>.
 ```
 
 ## Variant analysis — run it before you write the report
@@ -189,6 +216,39 @@ outstanding.
 A verdict is a *re-derivation from the current source*, not a re-reading of the
 diff — the same rule that governs carried findings (shared-rules rule 1). "The patch
 looks right" is not a verdict.
+
+## The build-mode report (per work item)
+
+```markdown
+# AC Code Skill — Build report — run <run-id>
+
+**Delivered:** <n> of <m> items · **blocked:** <n> · **regressions:** <n>
+
+| # | Item | Type | Owner | Verdict | Verified by |
+|---|---|---|---|---|---|
+| 1 | <what was asked> | bug | backend | done | `<command>` → <result> |
+| 2 | <what was asked> | feature | frontend | done with caveats | <evidence> |
+| 3 | <what was asked> | patch | devops | blocked: <why> | — |
+
+## Per item
+### 1. <item> — done
+- Changed: `file:line`, `file:line`
+- Acceptance: <criterion> → met, evidence: <command output / screenshot path>
+- Caveat / left alone: <anything deliberately not done>
+
+## Also changed
+- <migrations, new dependencies, config, generated files — anything the user
+  didn't literally ask for but the work required>
+
+## Noticed, not touched
+- `file:line` — <finding>. Offered as follow-up; not applied.
+
+## Suggested next
+- <usually: run the review pipeline over this diff>
+```
+
+Same caps as a review report. The **Verified by** column is the point of the
+table: an item with no command output beside it is not delivered, it is claimed.
 
 ## The post-deploy verification report (Step 6, once)
 

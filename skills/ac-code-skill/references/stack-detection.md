@@ -28,11 +28,6 @@ drives the gated standards on this and every later run without asking again — 
 user can change it. While you're asking, capture the other **pre-review** preference
 too: whether the fleet should own DevOps (see the `devops` brief).
 
-**Not asked here: which docs the user wants.** That question belongs to Step 4,
-after the review has established what the project is — asking it before anything has
-been read makes the user choose blind and lengthens the one prompt that stands
-between them and the run.
-
 ## 1. Find the subprojects
 
 Start by listing the repo root and looking one or two levels deep for the signal

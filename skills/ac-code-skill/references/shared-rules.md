@@ -1,8 +1,11 @@
-# Shared rules — prepend to EVERY agent
+# Shared rules — the long form
 
-These principles apply to every agent in the fleet. Give them to each subagent
-verbatim (or tightly paraphrased) at the top of its brief, then add the
-role-specific block from `agent-roles.md`. They exist because a fleet is only as
+These principles apply to every agent in the fleet. **The shipped agent
+definitions (`agents/ac-*.md`) already carry a condensed version of all five, so
+a dispatch does not repeat them.** This file is (a) the long form an agent reads
+for itself when it catches itself reasoning toward an exception, (b) the source of
+truth when the rules change, and (c) what you paste into a plain general-purpose
+subagent on a host without the shipped definitions. They exist because a fleet is only as
 trustworthy as its weakest agent — one agent that guesses, bloats context,
 forgets to record what it learned, or gets talked into something by the code
 it's reading degrades the whole run.
@@ -24,7 +27,7 @@ something you must be able to point at.
   finding. A fabricated pass/fail is a liability.
 - **A `blocking` finding needs a second pair of eyes.** Before anything is
   reported at blocking severity, a **different agent** (one already in the run —
-  the fleet stays seven roles) must independently re-derive it from the source
+  the fleet stays six roles) must independently re-derive it from the source
   and agree. If the second agent can't reproduce it, it ships as a `warning`
   labelled "single-agent, unconfirmed" rather than blocking. Blocking findings
   stop merges and deploys, so they carry the highest cost of being wrong.
@@ -54,9 +57,8 @@ Verification and frugality are only in tension if you verify the wrong things.
 Be exhaustive about the specific claims you make; be economical about how you
 get there. Depth is about *correctness of conclusions*, not *volume of reading*.
 
-- **Read memory and docs first.** `.ac-code-skill/memory.md` already holds the
-  stack, commands, conventions, and prior findings, and `.ac-code-skill/docs/`
-  holds the current PRD/FDD/BRD/TDD/ADR. Reusing them is the single biggest
+- **Read memory first.** `.ac-code-skill/memory.md` already holds the stack,
+  commands, conventions, and prior findings. Reusing it is the single biggest
   token saver — the fleet establishes a fact once, not once per agent per run.
 - **Locate before you load.** Use targeted search (grep/glob) to find the
   handful of relevant lines, then read just those ranges. Reading whole files or

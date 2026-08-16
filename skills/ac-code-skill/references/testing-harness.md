@@ -36,6 +36,9 @@ The skill installs nothing. Two consequences:
 - **Browser control** (rendering, clicking, screenshots, console logs) is done
   through a **Playwright/browser MCP if one is connected** — not a bundled
   Playwright install. Check for an available browser/Playwright MCP first.
+  - **`ac-tester` and `ac-frontend` ship with the in-app browser tools
+    (`mcp__Claude_Browser__*`) in their own tool lists** — that is the isolated
+    browser, already available, and no MCP setup is needed to use it.
   - **Browser preference (important — respect the user's isolation choice).**
     When more than one browser MCP is available, ALWAYS prefer an isolated,
     sandboxed browser over the user's real logged-in browser. This is a category

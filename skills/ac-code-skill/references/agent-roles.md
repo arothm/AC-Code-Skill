@@ -1,13 +1,14 @@
 # Agent role briefs
 
-The fleet is seven role-shaped agents, each a **principal/staff-level engineer**
-for its discipline — not a checklist-runner. Each brief below is what you hand a
-subagent when you dispatch it. Assemble a dispatch as: **shared-rules.md (all
-five principles) + the role block below + the concrete `{scope}` and `{commands}`
-you detected + "read `.ac-code-skill/memory.md` and everything in
-`.ac-code-skill/docs/` first, and the *Agent learnings* filed for your role"**.
-Fill the placeholders before sending. The coordinator hands each agent only its
-own block, so depth here costs nothing at dispatch time.
+The fleet is six role-shaped agents, each a **principal/staff-level engineer**
+for its discipline — not a checklist-runner.
+
+**Each block below is already embedded in its shipped agent definition**
+(`agents/ac-*.md`), so a normal dispatch does **not** repeat it — see
+`pipeline.md` §Assembling a dispatch. This file is the source of truth when a
+role's remit changes, the catalogue an agent reads when it needs another role's
+boundary, and what you paste into a plain general-purpose subagent on a host
+without the shipped definitions.
 
 `{scope}` = the changed files or the subtree to review. `{commands}` = the real
 commands you detected in Step 1 (never generic guesses).
@@ -16,15 +17,16 @@ Every agent ends its report with a **Memory delta** and, when it learned
 something about doing its own job better, an **Improvements** block (shared-rules
 rule 5).
 
-**Every dispatch also carries that agent's standards.** Run
-`python {skill_dir}/scripts/standards.py --agent <role> --context <web,api,ai,commercial,private>`
-and include the result. `data/standards.csv` holds the fleet's non-negotiable
+**Each agent runs its own standards** as its second command:
+`python {skill_dir}/scripts/standards.py --agent <role> --compact --context <web,api,ai,commercial,private>`
+— the dispatch supplies the context, not the pasted output.
+`data/standards.csv` holds the fleet's non-negotiable
 rules — each owned by exactly one agent, each carrying a **`verify` column that
 says how to prove compliance rather than assert it**. They are checked on every
 run that touches their surface, and a violation is a finding at the severity the
 row states. `--who "<need>"` routes an unclear need to the agent that owns it.
 
-## What "principal/staff caliber" means here (shared by all seven)
+## What "principal/staff caliber" means here (shared by all six)
 
 Each agent reasons at the level of a principal engineer or architect for its
 domain, which raises two things: the **depth of what it catches** (it sees the
@@ -68,10 +70,9 @@ out, not just "this looks off").
   observes but changes no source), and `ai-engineer` **when the repo has AI/LLM
   features**. Each agent reviews only the surface it owns. These run concurrently and
   change no files, which also stops parallel agents from colliding.
-- **Docs (writes files):** `docs`, into `.ac-code-skill/docs/` only, generating the
-  doc types the user picks at the start of the docs phase.
-- **Fix (approval-gated, writes files):** approved code fixes; `tester` authoring
-  tests; `ai-engineer` applying AI-code changes. Sequential.
+- **Fix (approval-gated, writes files):** each agent applies **its own** approved
+  findings — `tester` authoring tests, `ai-engineer` applying AI-code changes, and
+  so on. Run **one agent at a time**; two agents editing a shared tree corrupt it.
 - **Fix re-review (parallel, read-only):** immediately after the fixes land, each
   agent whose findings were fixed re-reviews **its own** fixes against the current
   source and returns `fixed` / `not fixed` / `regressed` per finding. `tester`
@@ -88,8 +89,9 @@ out, not just "this looks off").
 
 `tester` follows `references/testing-harness.md` in full; `frontend` uses its
 browser/viewport part for responsive, performance, and a11y checks; `security`
-uses `{skill_dir}/scripts/run_scanners.py`; `ai-engineer` uses it to run evals. Hand each of
-them that file alongside its block.
+uses `{skill_dir}/scripts/run_scanners.py`; `ai-engineer` uses it to run evals.
+Each of them reads that file itself from `{skill_dir}/references/` when the run
+needs it — it is not pasted into the dispatch.
 
 ## Dependency & dead-code ownership (no double-work)
 
@@ -445,39 +447,6 @@ or build step references it.
 > and ask** for destructive/irreversible actions. Report what shipped, health
 > status, and any rollback.
 
-## docs — Principal Documentation Architect / Staff Technical Writer
-> Produce documentation a principal engineer would sign off on: decision-focused,
-> traceable to code, and consistent across the set. **Deliverables are Microsoft
-> Word (`.docx`) files in `.ac-code-skill/docs/`** — not markdown. Author each doc
-> in markdown, then render it to `.docx` with the bundled stdlib helper
-> `{skill_dir}/scripts/md_to_docx.py` (`--in <doc>.md --out .ac-code-skill/docs/<doc>.docx`, or
-> `--in-dir <staging> --out-dir .ac-code-skill/docs` to batch — run `--help`, use
-> as a black box; it uses `pandoc` if present, else a zero-dependency built-in
-> writer). Stage the markdown sources under `.ac-code-skill/log/<run-id>/docs-src/`
-> (for diffing/regeneration), so `docs/` holds **only the Word files**. Driven by
-> memory + the merged review report + the code (verify against the code, don't
-> invent).
-> **The doc types are chosen before you are dispatched.** The docs phase opens with
-> the coordinator asking the user which of **PRD** (product requirements), **BRD**
-> (business requirements), **FDD** (functional design), **TDD** (technical design),
-> **ADRs** (decision records) they want, and recording it in memory's *Project
-> preferences* as `docs-types`. Generate **exactly that set** — never the whole set
-> unbidden, never a type the user didn't pick. On later runs the recorded choice
-> stands without re-asking, and the chosen set is refreshed automatically after the
-> review and again after the fixes are verified. If you are dispatched and
-> `docs-types` is somehow unset, stop and ask rather than guessing.
->
-> Produce/refresh, as applicable, one `.docx` each: **PRD** (goal, users, scope,
-> non-goals, success metrics), **BRD** (business value, stakeholders, cost/risk
-> framing), **FDD** (features, flows, state machines), **TDD** (architecture —
-> prefer C4-style context/container/component views — data model, API/event
-> contracts, deploy topology, and the **AI architecture** when the repo has AI
-> features), and **ADRs** (one per significant decision: context, options,
-> decision, consequences). Keep docs mutually consistent and consistent with
-> memory; write docs-as-code (diagrams-as-text where possible); mark anything you
-> couldn't verify as an open question rather than asserting it. In greenfield mode,
-> build the set from the intake interview instead of existing code.
-
 ## ai-engineer — Principal AI Engineer / Agentic Systems Architect
 > **Dispatch only when the repo has AI/LLM features.** Review and build autonomous,
 > tool-using, multi-agent systems at principal caliber. Scope: {scope}. Use the
@@ -537,8 +506,9 @@ every role so the first build hits the target — asked in batched, prioritized
 rounds, not all at once. Each principal-level role contributes the questions only
 it would know to ask:
 
-- **docs/product:** What are we building and for whom? The one core problem? v1
-  must-haves vs non-goals? Success metric? Budget/time-to-market constraints?
+- **product (asked by the coordinator):** What are we building and for whom? The
+  one core problem? v1 must-haves vs non-goals? Success metric? Budget and
+  time-to-market constraints?
 - **frontend:** Web / mobile / both? Target devices & performance budget (CWV)?
   Rendering paradigm (CSR/SSR/ISR/streaming) and SEO needs? Existing design
   system/brand or fresh? Accessibility bar (WCAG level)? Framework preference or
@@ -558,4 +528,4 @@ it would know to ask:
   latency budget? Does user/PII data reach a third-party model?
 
 The coordinator records the answers in memory's *Requirements & product* section,
-then generates the initial docs and scaffolding plan.
+then proposes the stack and scaffolding plan.

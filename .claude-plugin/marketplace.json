@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "ac-code-skill",
-      "description": "Orchestrate a fleet of seven role-shaped subagents (Frontend, Backend, Cyber Security, Tester, DevOps, Docs, and an AI Agent Engineer for AI/LLM repos) over a codebase, coordinated through one shared memory plus living docs. Agents read the full state each run, check for outdated/dead dependencies and dead code, and self-improve. Docs auto-generate after review and update after fixes; fixes are approval-gated; deploys auto-run with rollback. 'run ac-code-skill' runs the whole pipeline in one prompt, and an empty repo triggers a from-scratch interview.",
+      "description": "Orchestrate a fleet of six principal-level subagents (Frontend, Backend, Cyber Security, end-to-end Tester, DevOps, and an AI Agent Engineer for AI/LLM repos) over a codebase, coordinated through one shared memory. Agents review read-only in parallel, check for outdated/dead dependencies and dead code, self-improve, and each applies its own approved fixes sequentially in the gated fix phase. Fixes are approval-gated; deploys auto-run with rollback. 'run ac-code-skill' runs the whole pipeline in one prompt, and an empty repo triggers a from-scratch interview.",
       "source": "./",
       "strict": false,
       "skills": [
@@ -22,9 +22,7 @@
         "./agents/ac-security.md",
         "./agents/ac-tester.md",
         "./agents/ac-ai-engineer.md",
-        "./agents/ac-docs.md",
-        "./agents/ac-devops.md",
-        "./agents/ac-fix.md"
+        "./agents/ac-devops.md"
       ]
     }
   ]
