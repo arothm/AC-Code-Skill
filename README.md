@@ -397,12 +397,17 @@ Stated plainly, because the skill itself forbids overclaiming:
   checks them deliberately.
 - **`server_audit.py` has not yet run against a live host.** Its read-only property is
   verified by test; its triage patterns are tested against synthetic output only.
-- **Tool restriction stops at `Bash`.** The read-only agents have no `Write` or `Edit`,
-  but `Bash` can still mutate a tree through redirection or `sed -i`. Their briefs forbid
-  it and nothing enforces that — running linters and test suites requires a shell.
+- **Read-only during review is verified, not made impossible.** Since each agent now
+  applies its own approved fixes, they all hold `Write`/`Edit`, and `Bash` could always
+  mutate a tree through redirection or `sed -i` anyway. The boundary is enforced by
+  checking instead: `git status` is snapshotted before the review phase and diffed
+  after, and any file changed during review fails the run. That catches a violation
+  rather than preventing it.
 - **The `.skill` bundle carries only the skill.** `agents/`, `hooks/` and `tests/` are
-  Claude Code plugin components and developer files; a Desktop/Cowork upload gets the
-  skill and its prose boundaries, not the enforced tool lists.
+  Claude Code plugin components and developer files. A Desktop/Cowork upload therefore
+  gets the coordinator, the references and the helper scripts — but **not** the six
+  agent definitions, and Desktop has no subagent dispatch, so the fleet runs as one
+  agent following the briefs sequentially rather than six in parallel.
 
 The prebuilt `.skill` is rebuilt by `build.py` (which strips bytecode and normalises paths
 so it passes the desktop validator), but it's still committed rather than produced by CI, so
